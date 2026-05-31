@@ -1,18 +1,19 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Heebo } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
+const heebo = Heebo({ subsets: ['hebrew', 'latin'], variable: '--font-sans', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'Smokless',
   description: 'עקוב אחר הסיגריות שלך, השג יעדים, תתחרה עם חברים',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl" className={`${geist.variable} dark`}>
+    <html lang="he" dir="rtl" className={`${heebo.variable} dark`}>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
