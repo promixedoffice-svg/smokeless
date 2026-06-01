@@ -126,7 +126,6 @@ export async function getChallengeByCode(code: string): Promise<Challenge | null
   const q = query(
     collection(db, 'challenges'),
     where('challengeCode', '==', code.toUpperCase()),
-    where('status', '==', 'pending')
   )
   const snap = await getDocs(q)
   if (snap.empty) return null

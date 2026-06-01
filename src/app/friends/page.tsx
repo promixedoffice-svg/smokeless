@@ -393,6 +393,21 @@ export default function FriendsPage() {
         setJoinLoading(false)
         return
       }
+      if (challenge.status === 'active') {
+        setJoinError('התחרות כבר מלאה — יש בה שני משתתפים')
+        setJoinLoading(false)
+        return
+      }
+      if (challenge.status === 'pending_approval') {
+        setJoinError('כבר יש מישהו שמחכה לאישור להצטרפות לתחרות זו')
+        setJoinLoading(false)
+        return
+      }
+      if (challenge.status === 'cancelled' || challenge.status === 'completed') {
+        setJoinError('התחרות הזו כבר לא פעילה')
+        setJoinLoading(false)
+        return
+      }
 
       await requestJoinChallenge(challenge.id, profile)
       setJoinSuccess(true)
