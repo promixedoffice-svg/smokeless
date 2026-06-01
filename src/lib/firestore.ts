@@ -1,7 +1,7 @@
 import {
   doc, getDoc, setDoc, addDoc, deleteDoc,
   collection, query, where, getDocs, onSnapshot,
-  orderBy, limit, Unsubscribe, updateDoc, serverTimestamp,
+  orderBy, Unsubscribe, updateDoc,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { UserProfile, CigaretteLog, DayStats, Challenge } from '@/types'
@@ -42,13 +42,11 @@ export async function deleteLastCigarette(userId: string): Promise<void> {
     collection(db, 'logs'),
     where('userId', '==', userId),
     where('date', '==', todayDate()),
-    orderBy('timestamp', 'desc'),
-    limit(1)
   )
   const snap = await getDocs(q)
-  if (!snap.empty) {
-    await deleteDoc(snap.docs[0].ref)
-  }
+  if (snap.empty) return
+  const sorted = snap.docs.sort((a, b) => b.data().timestamp - a.data().timestamp)
+  await deleteDoc(sorted[0].ref)
 }
 
 export function subscribeToTodayLogs(
