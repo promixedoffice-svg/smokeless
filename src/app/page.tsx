@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLogs } from '@/hooks/useLogs'
 import { NavBar } from '@/components/NavBar'
@@ -11,13 +11,25 @@ import { GoalSetupModal } from '@/components/GoalSetupModal'
 import { DailyMotivationBanner } from '@/components/DailyMotivationBanner'
 import { LogoutMenu } from '@/components/LogoutMenu'
 import { cn } from '@/lib/utils'
-import { Undo2 } from 'lucide-react'
+import { Undo2, Trophy } from 'lucide-react'
+import { subscribeToMyChallenges, updateChallengeScores } from '@/lib/firestore'
+import { Challenge } from '@/types'
 
 export default function HomePage() {
   const { user, profile, loading } = useAuth()
   const { count, log, undo } = useLogs(user?.uid)
   const [showGoalSetup, setShowGoalSetup] = useState(false)
   const [tapped, setTapped] = useState(false)
+  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    updateChallengeScores(user.uid)
+    const unsub = subscribeToMyChallenges(user.uid, (all) => {
+      setActiveChallenges(all.filter((c) => c.status === 'active'))
+    })
+    return unsub
+  }, [user])
 
   const dailyGoal = profile?.dailyGoal ?? 10
   const pricePerCig = (profile?.pricePerPack ?? 35) / (profile?.cigarettesPerPack ?? 20)
@@ -182,6 +194,38 @@ export default function HomePage() {
           <div className="text-xs text-muted-foreground mt-1">ימי רצף</div>
         </div>
       </div>
+
+      {/* Active Challenges Widget */}
+      {activeChallenges.length > 0 && (
+        <div className="px-5 mt-4">
+          <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide flex items-center gap-1.5">
+            <Trophy size={12} className="text-amber-400" /> תחרויות פעילות
+          </p>
+          <div className="space-y-2">
+            {activeChallenges.map((c) => {
+              const isCreator = c.creatorId === user!.uid
+              const myScore = isCreator ? c.creatorTotal : c.participantTotal
+              const theirScore = isCreator ? c.participantTotal : c.creatorTotal
+              const theirName = isCreator ? c.participantName : c.creatorName
+              const iWin = myScore < theirScore
+              const theyWin = theirScore < myScore
+              return (
+                <div key={c.id} className="bg-card rounded-2xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('text-2xl font-black', iWin ? 'text-emerald-400' : theyWin ? 'text-red-400' : 'text-foreground')}>{myScore}</span>
+                    <span className="text-xs text-muted-foreground">vs</span>
+                    <span className={cn('text-2xl font-black', theyWin ? 'text-red-400' : iWin ? 'text-emerald-400' : 'text-foreground')}>{theirScore}</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-semibold">{theirName?.split(' ')[0]}</p>
+                    <p className="text-xs text-muted-foreground">{iWin ? '🏆 אתה מוביל' : theyWin ? '📈 מוביל' : '🤝 תיקו'}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <NavBar />
       <GoalSetupModal open={showGoalSetup} onClose={() => setShowGoalSetup(false)} />
