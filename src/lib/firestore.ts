@@ -280,33 +280,35 @@ export function subscribeToMyChallenges(
 }
 
 export async function updateChallengeScores(userId: string): Promise<void> {
-  const q = query(collection(db, 'challenges'), where('status', '==', 'active'))
-  const snap = await getDocs(q)
+  // Each user can only read their own logs — update only their own score field
+  const [snap1, snap2] = await Promise.all([
+    getDocs(query(collection(db, 'challenges'), where('creatorId', '==', userId), where('status', '==', 'active'))),
+    getDocs(query(collection(db, 'challenges'), where('participantId', '==', userId), where('status', '==', 'active'))),
+  ])
+  const allDocs = [...snap1.docs, ...snap2.docs].filter(
+    (d, i, arr) => arr.findIndex((x) => x.id === d.id) === i
+  )
   const today = todayDate()
-  for (const challengeDoc of snap.docs) {
+
+  for (const challengeDoc of allDocs) {
     const c = challengeDoc.data() as Challenge
-    if (c.creatorId !== userId && c.participantId !== userId) continue
-    const start = c.startDate
     const days: string[] = []
-    let d = new Date(start + 'T12:00:00')
+    let d = new Date(c.startDate + 'T12:00:00')
     const endD = new Date(today + 'T12:00:00')
     while (d <= endD) {
       days.push(format(d, 'yyyy-MM-dd'))
       d = new Date(d.getTime() + 86400000)
     }
     if (days.length === 0) continue
-    const countLogs = async (uid: string) => {
-      let total = 0
-      for (let i = 0; i < days.length; i += 30) {
-        const batch = days.slice(i, i + 30)
-        const lq = query(collection(db, 'logs'), where('userId', '==', uid), where('date', 'in', batch))
-        const ls = await getDocs(lq)
-        total += ls.size
-      }
-      return total
+
+    let myTotal = 0
+    for (let i = 0; i < days.length; i += 30) {
+      const batch = days.slice(i, i + 30)
+      const ls = await getDocs(query(collection(db, 'logs'), where('userId', '==', userId), where('date', 'in', batch)))
+      myTotal += ls.size
     }
-    const creatorTotal = await countLogs(c.creatorId)
-    const participantTotal = c.participantId ? await countLogs(c.participantId) : 0
-    await updateDoc(challengeDoc.ref, { creatorTotal, participantTotal })
+
+    const field = c.creatorId === userId ? 'creatorTotal' : 'participantTotal'
+    await updateDoc(challengeDoc.ref, { [field]: myTotal })
   }
 }
