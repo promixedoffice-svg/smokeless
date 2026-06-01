@@ -26,7 +26,7 @@ export function NavBar() {
               href={href}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 transition-colors',
-                active ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground'
+                active ? 'text-amber-500' : 'text-white/70 hover:text-amber-400 active:text-amber-400'
               )}
             >
               <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
