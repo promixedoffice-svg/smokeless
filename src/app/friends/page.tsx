@@ -82,7 +82,7 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
           <span className={cn('text-xs font-semibold', statusColor)}>● {statusLabel}</span>
           <span className="text-xs text-muted-foreground">·</span>
           <span className="text-xs text-muted-foreground">{c.type === 'weekly' ? 'שבועי' : 'חודשי'}</span>
-          <span className="text-xs text-muted-foreground">· {(c.participantIds ?? []).length}/{c.maxParticipants}</span>
+          <span className="text-xs text-muted-foreground">· {(c.participantIds ?? []).filter(id => id !== c.creatorId).length}/{c.maxParticipants} חברים</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{c.creatorName.split(' ')[0]}'s group</span>
@@ -321,7 +321,8 @@ export default function FriendsPage() {
       if (challenge.status === 'cancelled' || challenge.status === 'completed') {
         setJoinError('התחרות הזו כבר לא פעילה'); setJoinLoading(false); return
       }
-      if ((challenge.participantIds ?? []).length >= challenge.maxParticipants) {
+      const nonCreatorCount = (challenge.participantIds ?? []).filter(id => id !== challenge.creatorId).length
+      if (nonCreatorCount >= challenge.maxParticipants) {
         setJoinError('התחרות מלאה — אין מקום למשתתפים נוספים'); setJoinLoading(false); return
       }
       await requestJoinChallenge(challenge.id, profile)
@@ -393,7 +394,7 @@ export default function FriendsPage() {
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground mb-3">מספר משתתפים מקסימלי</p>
+            <p className="text-xs text-muted-foreground mb-3">כמה חברים יכולים להצטרף (לא כולל אתה)</p>
             <div className="flex gap-2 flex-wrap mb-5">
               {[2, 3, 4, 5, 8, 10].map(n => (
                 <button key={n} onClick={() => setMaxParticipants(n)}

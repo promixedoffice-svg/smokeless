@@ -191,8 +191,8 @@ export async function approveJoinRequest(challengeId: string, userId: string): P
     [`pendingRequests.${userId}`]: null,  // can't delete nested field this way
   }
   // Check if challenge should become active
-  const newParticipantCount = (c.participantIds?.length ?? 1) + 1
-  if (newParticipantCount >= c.maxParticipants) {
+  const nonCreatorCount = (c.participantIds ?? []).filter(id => id !== c.creatorId).length + 1
+  if (nonCreatorCount >= c.maxParticipants) {
     updates.status = 'active'
   }
   await updateDoc(doc(db, 'challenges', challengeId), updates)
