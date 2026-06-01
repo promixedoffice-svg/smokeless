@@ -18,14 +18,22 @@ export interface CigaretteLog {
   id: string
   userId: string
   timestamp: number
-  date: string // "2024-01-15"
+  date: string
 }
 
 export interface DayStats {
   date: string
-  label: string // "א׳", "ב׳" etc.
+  label: string
   count: number
   goal: number
+}
+
+export interface ChallengeMessage {
+  id: string
+  userId: string
+  userName: string
+  content: string
+  timestamp: number
 }
 
 export interface Challenge {
@@ -36,10 +44,14 @@ export interface Challenge {
   participantId?: string
   participantName?: string
   participantPhoto?: string
+  requesterId?: string
+  requesterName?: string
+  requesterPhoto?: string
   startDate: string
   endDate: string
-  status: 'pending' | 'active' | 'completed'
+  status: 'pending' | 'pending_approval' | 'active' | 'cancelled' | 'completed'
   type: 'weekly' | 'monthly'
   creatorTotal: number
   participantTotal: number
+  cancellationMessage?: string
 }
