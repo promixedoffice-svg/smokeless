@@ -320,34 +320,39 @@ export default function FriendsPage() {
     setJoinLoading(true)
     setJoinError('')
 
-    const creator = await getUserByInviteCode(joinCode.trim())
-    if (!creator) {
-      setJoinError('קוד לא נמצא. בדוק שוב.')
-      setJoinLoading(false)
-      return
-    }
-    if (creator.uid === user!.uid) {
-      setJoinError('לא ניתן להצטרף לאתגר שלך עצמך')
-      setJoinLoading(false)
-      return
-    }
+    try {
+      const creator = await getUserByInviteCode(joinCode.trim())
+      if (!creator) {
+        setJoinError('קוד לא נמצא. בדוק שוב.')
+        setJoinLoading(false)
+        return
+      }
+      if (creator.uid === user!.uid) {
+        setJoinError('לא ניתן להצטרף לאתגר שלך עצמך')
+        setJoinLoading(false)
+        return
+      }
 
-    const challenge = await getPendingChallengeByCreator(creator.uid)
-    if (!challenge) {
-      setJoinError('אין אתגר פתוח מאותו משתמש. בקש ממנו ליצור תחרות.')
-      setJoinLoading(false)
-      return
-    }
+      const challenge = await getPendingChallengeByCreator(creator.uid)
+      if (!challenge) {
+        setJoinError('אין אתגר פתוח מאותו משתמש. בקש ממנו ליצור תחרות.')
+        setJoinLoading(false)
+        return
+      }
 
-    await requestJoinChallenge(challenge.id, profile)
-    setJoinLoading(false)
-    setJoinSuccess(true)
-    setJoinCode('')
-    setTimeout(() => {
-      setShowJoin(false)
-      setJoinSuccess(false)
-      refresh()
-    }, 2000)
+      await requestJoinChallenge(challenge.id, profile)
+      setJoinSuccess(true)
+      setJoinCode('')
+      setTimeout(() => {
+        setShowJoin(false)
+        setJoinSuccess(false)
+        refresh()
+      }, 2000)
+    } catch (err) {
+      setJoinError('שגיאה: בדוק שה-Firestore Rules עודכנו ב-Firebase.')
+    } finally {
+      setJoinLoading(false)
+    }
   }
 
   const active = challenges.filter((c) => c.status === 'active')
