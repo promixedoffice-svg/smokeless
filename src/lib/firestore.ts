@@ -1,10 +1,10 @@
 import {
   doc, getDoc, setDoc, addDoc, deleteDoc,
   collection, query, where, getDocs, onSnapshot,
-  orderBy, arrayUnion, Unsubscribe, updateDoc,
+  orderBy, arrayUnion, arrayRemove, Unsubscribe, updateDoc,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import { UserProfile, CigaretteLog, DayStats, Challenge, ChallengeMessage } from '@/types'
+import { UserProfile, CigaretteLog, DayStats, Challenge, ChallengeMessage, ChallengeParticipant } from '@/types'
 import { format, subDays } from 'date-fns'
 
 // --- User Profile ---
@@ -123,86 +123,103 @@ export async function getUserByInviteCode(code: string): Promise<UserProfile | n
 }
 
 export async function getChallengeByCode(code: string): Promise<Challenge | null> {
-  const q = query(
-    collection(db, 'challenges'),
-    where('challengeCode', '==', code.toUpperCase()),
-  )
+  const q = query(collection(db, 'challenges'), where('challengeCode', '==', code.toUpperCase()))
   const snap = await getDocs(q)
   if (snap.empty) return null
   return { id: snap.docs[0].id, ...snap.docs[0].data() } as Challenge
 }
 
-export async function createChallenge(creator: UserProfile, type: 'weekly' | 'monthly'): Promise<string> {
+export async function createChallenge(
+  creator: UserProfile,
+  type: 'weekly' | 'monthly',
+  maxParticipants: number
+): Promise<string> {
   const now = new Date()
   const endDate = type === 'weekly'
     ? format(new Date(now.getTime() + 7 * 86400000), 'yyyy-MM-dd')
     : format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd')
   const challengeCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+  const creatorParticipant: ChallengeParticipant = {
+    uid: creator.uid,
+    displayName: creator.displayName,
+    photoURL: creator.photoURL ?? '',
+  }
   const ref = await addDoc(collection(db, 'challenges'), {
     creatorId: creator.uid,
     creatorName: creator.displayName,
     creatorPhoto: creator.photoURL ?? '',
+    maxParticipants,
+    participantIds: [creator.uid],
+    pendingRequestIds: [],
+    participants: { [creator.uid]: creatorParticipant },
+    pendingRequests: {},
+    scores: { [creator.uid]: 0 },
     startDate: format(now, 'yyyy-MM-dd'),
     endDate,
     type,
     status: 'pending',
     challengeCode,
-    creatorTotal: 0,
-    participantTotal: 0,
+    deletedBy: [],
   })
   return ref.id
 }
 
 export async function requestJoinChallenge(challengeId: string, requester: UserProfile): Promise<void> {
+  const requesterData: ChallengeParticipant = {
+    uid: requester.uid,
+    displayName: requester.displayName,
+    photoURL: requester.photoURL ?? '',
+  }
   await updateDoc(doc(db, 'challenges', challengeId), {
-    requesterId: requester.uid,
-    requesterName: requester.displayName,
-    requesterPhoto: requester.photoURL ?? '',
-    status: 'pending_approval',
+    [`pendingRequests.${requester.uid}`]: requesterData,
+    pendingRequestIds: arrayUnion(requester.uid),
   })
 }
 
-export async function approveJoinRequest(challengeId: string): Promise<void> {
+export async function approveJoinRequest(challengeId: string, userId: string): Promise<void> {
   const snap = await getDoc(doc(db, 'challenges', challengeId))
   if (!snap.exists()) return
-  const data = snap.data() as Challenge
+  const c = snap.data() as Challenge
+  const requester = c.pendingRequests[userId]
+  if (!requester) return
+
+  const updates: Record<string, unknown> = {
+    [`participants.${userId}`]: requester,
+    [`scores.${userId}`]: 0,
+    participantIds: arrayUnion(userId),
+    pendingRequestIds: arrayRemove(userId),
+    [`pendingRequests.${userId}`]: null,  // can't delete nested field this way
+  }
+  // Check if challenge should become active
+  const newParticipantCount = (c.participantIds?.length ?? 1) + 1
+  if (newParticipantCount >= c.maxParticipants) {
+    updates.status = 'active'
+  }
+  await updateDoc(doc(db, 'challenges', challengeId), updates)
+}
+
+export async function rejectJoinRequest(challengeId: string, userId: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
-    participantId: data.requesterId,
-    participantName: data.requesterName,
-    participantPhoto: data.requesterPhoto ?? '',
-    requesterId: null,
-    requesterName: null,
-    requesterPhoto: null,
-    status: 'active',
+    [`pendingRequests.${userId}`]: null,
+    pendingRequestIds: arrayRemove(userId),
   })
 }
 
-export async function rejectJoinRequest(challengeId: string): Promise<void> {
+export async function startChallenge(challengeId: string): Promise<void> {
+  await updateDoc(doc(db, 'challenges', challengeId), { status: 'active' })
+}
+
+export async function removeParticipantFromGroup(challengeId: string, userId: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
-    requesterId: null,
-    requesterName: null,
-    requesterPhoto: null,
-    status: 'pending',
+    [`participants.${userId}`]: null,
+    participantIds: arrayRemove(userId),
   })
 }
 
-export async function removeParticipant(challengeId: string): Promise<void> {
+export async function leaveChallenge(challengeId: string, userId: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
-    participantId: null,
-    participantName: null,
-    participantPhoto: null,
-    status: 'pending',
-    participantTotal: 0,
-  })
-}
-
-export async function leaveChallenge(challengeId: string): Promise<void> {
-  await updateDoc(doc(db, 'challenges', challengeId), {
-    participantId: null,
-    participantName: null,
-    participantPhoto: null,
-    status: 'pending',
-    participantTotal: 0,
+    [`participants.${userId}`]: null,
+    participantIds: arrayRemove(userId),
   })
 }
 
@@ -220,13 +237,12 @@ export async function hardDeleteChallenge(challengeId: string): Promise<void> {
 export async function softDeleteChallenge(challengeId: string, userId: string): Promise<void> {
   const ref = doc(db, 'challenges', challengeId)
   await updateDoc(ref, { deletedBy: arrayUnion(userId) })
-  // Hard delete if all parties deleted
   const snap = await getDoc(ref)
   if (!snap.exists()) return
-  const c = snap.data() as Challenge & { deletedBy?: string[] }
+  const c = snap.data() as Challenge
   const deletedBy = c.deletedBy ?? []
-  const parties = [c.creatorId, c.participantId].filter(Boolean) as string[]
-  if (parties.every((uid) => deletedBy.includes(uid))) {
+  const parties = c.participantIds ?? []
+  if (parties.length > 0 && parties.every((uid) => deletedBy.includes(uid))) {
     await deleteDoc(ref)
   }
 }
@@ -249,10 +265,7 @@ export function subscribeToChallengeMessages(
   challengeId: string,
   callback: (messages: ChallengeMessage[]) => void
 ): Unsubscribe {
-  const q = query(
-    collection(db, 'challenges', challengeId, 'messages'),
-    orderBy('timestamp', 'asc')
-  )
+  const q = query(collection(db, 'challenges', challengeId, 'messages'), orderBy('timestamp', 'asc'))
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as ChallengeMessage)))
   })
@@ -262,16 +275,13 @@ export function subscribeToMyChallenges(
   userId: string,
   callback: (challenges: Challenge[]) => void
 ): Unsubscribe {
-  const q = query(collection(db, 'challenges'), where('creatorId', '==', userId))
+  const q = query(collection(db, 'challenges'), where('participantIds', 'array-contains', userId))
   return onSnapshot(q, async (snap) => {
-    const asCreator = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Challenge))
-    const q2 = query(collection(db, 'challenges'), where('participantId', '==', userId))
+    const asMember = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Challenge))
+    const q2 = query(collection(db, 'challenges'), where('pendingRequestIds', 'array-contains', userId))
     const snap2 = await getDocs(q2)
-    const asParticipant = snap2.docs.map((d) => ({ id: d.id, ...d.data() } as Challenge))
-    const q3 = query(collection(db, 'challenges'), where('requesterId', '==', userId))
-    const snap3 = await getDocs(q3)
-    const asRequester = snap3.docs.map((d) => ({ id: d.id, ...d.data() } as Challenge))
-    const all = [...asCreator, ...asParticipant, ...asRequester]
+    const asPending = snap2.docs.map((d) => ({ id: d.id, ...d.data() } as Challenge))
+    const all = [...asMember, ...asPending]
       .filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
       .filter((c) => !(c.deletedBy ?? []).includes(userId))
     callback(all)
@@ -279,17 +289,14 @@ export function subscribeToMyChallenges(
 }
 
 export async function updateChallengeScores(userId: string): Promise<void> {
-  // Each user can only read their own logs — update only their own score field
-  const [snap1, snap2] = await Promise.all([
-    getDocs(query(collection(db, 'challenges'), where('creatorId', '==', userId), where('status', '==', 'active'))),
-    getDocs(query(collection(db, 'challenges'), where('participantId', '==', userId), where('status', '==', 'active'))),
-  ])
-  const allDocs = [...snap1.docs, ...snap2.docs].filter(
-    (d, i, arr) => arr.findIndex((x) => x.id === d.id) === i
+  const snap = await getDocs(
+    query(collection(db, 'challenges'),
+      where('participantIds', 'array-contains', userId),
+      where('status', '==', 'active')
+    )
   )
   const today = todayDate()
-
-  for (const challengeDoc of allDocs) {
+  for (const challengeDoc of snap.docs) {
     const c = challengeDoc.data() as Challenge
     const days: string[] = []
     let d = new Date(c.startDate + 'T12:00:00')
@@ -299,15 +306,12 @@ export async function updateChallengeScores(userId: string): Promise<void> {
       d = new Date(d.getTime() + 86400000)
     }
     if (days.length === 0) continue
-
     let myTotal = 0
     for (let i = 0; i < days.length; i += 30) {
       const batch = days.slice(i, i + 30)
       const ls = await getDocs(query(collection(db, 'logs'), where('userId', '==', userId), where('date', 'in', batch)))
       myTotal += ls.size
     }
-
-    const field = c.creatorId === userId ? 'creatorTotal' : 'participantTotal'
-    await updateDoc(challengeDoc.ref, { [field]: myTotal })
+    await updateDoc(challengeDoc.ref, { [`scores.${userId}`]: myTotal })
   }
 }

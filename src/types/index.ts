@@ -36,24 +36,28 @@ export interface ChallengeMessage {
   timestamp: number
 }
 
+export interface ChallengeParticipant {
+  uid: string
+  displayName: string
+  photoURL?: string
+}
+
 export interface Challenge {
   id: string
+  challengeCode: string
   creatorId: string
   creatorName: string
   creatorPhoto?: string
-  participantId?: string
-  participantName?: string
-  participantPhoto?: string
-  requesterId?: string
-  requesterName?: string
-  requesterPhoto?: string
+  maxParticipants: number
+  participantIds: string[]
+  pendingRequestIds: string[]
+  participants: Record<string, ChallengeParticipant>
+  pendingRequests: Record<string, ChallengeParticipant>
+  scores: Record<string, number>
   startDate: string
   endDate: string
-  status: 'pending' | 'pending_approval' | 'active' | 'cancelled' | 'completed'
+  status: 'pending' | 'active' | 'cancelled' | 'completed'
   type: 'weekly' | 'monthly'
-  challengeCode: string
-  creatorTotal: number
-  participantTotal: number
   cancellationMessage?: string
   deletedBy?: string[]
 }

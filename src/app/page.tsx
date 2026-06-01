@@ -204,22 +204,22 @@ export default function HomePage() {
           </p>
           <div className="space-y-2">
             {activeChallenges.map((c) => {
-              const isCreator = c.creatorId === user!.uid
-              const myScore = isCreator ? c.creatorTotal : c.participantTotal
-              const theirScore = isCreator ? c.participantTotal : c.creatorTotal
-              const theirName = isCreator ? c.participantName : c.creatorName
-              const iWin = myScore < theirScore
-              const theyWin = theirScore < myScore
+              const scores = c.scores ?? {}
+              const myScore = scores[user!.uid] ?? 0
+              const sorted = Object.entries(scores).sort(([,a],[,b]) => a - b)
+              const myRank = sorted.findIndex(([uid]) => uid === user!.uid)
               return (
                 <div key={c.id} className="bg-card rounded-2xl p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={cn('text-2xl font-black', iWin ? 'text-emerald-400' : theyWin ? 'text-red-400' : 'text-foreground')}>{myScore}</span>
-                    <span className="text-xs text-muted-foreground">vs</span>
-                    <span className={cn('text-2xl font-black', theyWin ? 'text-red-400' : iWin ? 'text-emerald-400' : 'text-foreground')}>{theirScore}</span>
+                    <span className="text-xl">{myRank === 0 ? '🥇' : myRank === 1 ? '🥈' : '🥉'}</span>
+                    <div>
+                      <p className="text-xs font-semibold">{c.creatorName.split(' ')[0]}'s group</p>
+                      <p className="text-xs text-muted-foreground">{sorted.length} משתתפים</p>
+                    </div>
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-semibold">{theirName?.split(' ')[0]}</p>
-                    <p className="text-xs text-muted-foreground">{iWin ? '🏆 אתה מוביל' : theyWin ? '📈 מוביל' : '🤝 תיקו'}</p>
+                    <span className={cn('text-2xl font-black', myRank === 0 ? 'text-emerald-400' : 'text-foreground')}>{myScore}</span>
+                    <p className="text-xs text-muted-foreground">הסיגריות שלי</p>
                   </div>
                 </div>
               )
