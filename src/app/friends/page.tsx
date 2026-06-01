@@ -8,7 +8,7 @@ import { NavBar } from '@/components/NavBar'
 import { LoginScreen } from '@/components/LoginScreen'
 import {
   createChallenge, requestJoinChallenge, approveJoinRequest, rejectJoinRequest,
-  removeParticipant, cancelChallenge, deleteChallenge, leaveChallenge,
+  removeParticipant, cancelChallenge, softDeleteChallenge, leaveChallenge,
   subscribeToMyChallenges,
   getUserByInviteCode, getPendingChallengeByCreator,
   updateChallengeScores, sendChallengeMessage, subscribeToChallengeMessages,
@@ -84,7 +84,7 @@ function ChallengeCard({
   }
 
   async function handleDelete() {
-    await deleteChallenge(c.id)
+    await softDeleteChallenge(c.id, userId)
     onRefresh()
   }
 
@@ -234,13 +234,21 @@ function ChallengeCard({
           )}
 
           {/* Participant actions */}
-          {isParticipant && c.status === 'active' && (
-            <div className="border-t border-border pt-3">
+          {isParticipant && (
+            <div className="border-t border-border pt-3 space-y-2">
+              {c.status === 'active' && (
+                <button
+                  onClick={handleLeave}
+                  className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <X size={13} /> עזוב תחרות
+                </button>
+              )}
               <button
-                onClick={handleLeave}
+                onClick={handleDelete}
                 className="w-full h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
               >
-                <X size={13} /> עזוב תחרות
+                <Trash2 size={13} /> מחק מהרשימה שלי
               </button>
             </div>
           )}

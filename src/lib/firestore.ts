@@ -1,7 +1,7 @@
 import {
   doc, getDoc, setDoc, addDoc, deleteDoc,
   collection, query, where, getDocs, onSnapshot,
-  orderBy, Unsubscribe, updateDoc,
+  orderBy, arrayUnion, Unsubscribe, updateDoc,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { UserProfile, CigaretteLog, DayStats, Challenge, ChallengeMessage } from '@/types'
@@ -212,8 +212,18 @@ export async function cancelChallenge(challengeId: string, message: string): Pro
   })
 }
 
-export async function deleteChallenge(challengeId: string): Promise<void> {
-  await deleteDoc(doc(db, 'challenges', challengeId))
+export async function softDeleteChallenge(challengeId: string, userId: string): Promise<void> {
+  const ref = doc(db, 'challenges', challengeId)
+  await updateDoc(ref, { deletedBy: arrayUnion(userId) })
+  // Hard delete if all parties deleted
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return
+  const c = snap.data() as Challenge & { deletedBy?: string[] }
+  const deletedBy = c.deletedBy ?? []
+  const parties = [c.creatorId, c.participantId].filter(Boolean) as string[]
+  if (parties.every((uid) => deletedBy.includes(uid))) {
+    await deleteDoc(ref)
+  }
 }
 
 export async function sendChallengeMessage(
@@ -256,9 +266,9 @@ export function subscribeToMyChallenges(
     const q3 = query(collection(db, 'challenges'), where('requesterId', '==', userId))
     const snap3 = await getDocs(q3)
     const asRequester = snap3.docs.map((d) => ({ id: d.id, ...d.data() } as Challenge))
-    const all = [...asCreator, ...asParticipant, ...asRequester].filter(
-      (c, i, arr) => arr.findIndex((x) => x.id === c.id) === i
-    )
+    const all = [...asCreator, ...asParticipant, ...asRequester]
+      .filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
+      .filter((c) => !(c.deletedBy ?? []).includes(userId))
     callback(all)
   })
 }

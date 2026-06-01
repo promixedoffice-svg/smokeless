@@ -54,4 +54,5 @@ export interface Challenge {
   creatorTotal: number
   participantTotal: number
   cancellationMessage?: string
+  deletedBy?: string[]
 }
