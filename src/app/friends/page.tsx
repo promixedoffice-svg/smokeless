@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NavBar } from '@/components/NavBar'
 import { LoginScreen } from '@/components/LoginScreen'
@@ -16,6 +16,7 @@ import {
 import { Challenge, ChallengeMessage, ChallengeParticipant } from '@/types'
 import { Trophy, Plus, Link2, X, Check, Trash2, Ban, ChevronDown, ChevronUp, Send, Share2, CheckCheck, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { playMessageSound, showNotification } from '@/lib/sound'
 
 const EMOJI_REACTIONS = ['💪', '😤', '🔥', '😂', '🏃', '🚬', '👑', '💸']
 const PLACE_EMOJIS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
@@ -35,11 +36,22 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
   const [cancelMsg, setCancelMsg] = useState('')
   const [copied, setCopied] = useState(false)
 
+  const prevMsgCount = useRef(0)
   useEffect(() => {
     if (!expanded || c.status === 'cancelled') return
-    const unsub = subscribeToChallengeMessages(c.id, setMessages)
+    const unsub = subscribeToChallengeMessages(c.id, (newMsgs) => {
+      if (newMsgs.length > prevMsgCount.current) {
+        const latest = newMsgs[newMsgs.length - 1]
+        if (latest && latest.userId !== userId) {
+          playMessageSound()
+          showNotification('הודעה חדשה בתחרות', `${latest.userName.split(' ')[0]}: ${latest.content}`)
+        }
+      }
+      prevMsgCount.current = newMsgs.length
+      setMessages(newMsgs)
+    })
     return unsub
-  }, [expanded, c.id, c.status])
+  }, [expanded, c.id, c.status, userId])
 
   // Build sorted leaderboard
   const scores = c.scores ?? {}

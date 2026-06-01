@@ -10,6 +10,7 @@ import { saveUserProfile, resetAllUserLogs } from '@/lib/firestore'
 import { CheckCircle2, Trash2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
+import { isSoundEnabled, setSoundEnabled, requestNotificationPermission } from '@/lib/sound'
 
 export default function GoalsPage() {
   const { user, profile, refreshProfile, loading } = useAuth()
@@ -23,9 +24,13 @@ export default function GoalsPage() {
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
   const [floatingBtn, setFloatingBtn] = useState(false)
+  const [soundOn, setSoundOn] = useState(true)
+  const [notifGranted, setNotifGranted] = useState(false)
 
   useEffect(() => {
     setFloatingBtn(localStorage.getItem('smokeless_floating_btn_hidden') === 'true')
+    setSoundOn(isSoundEnabled())
+    setNotifGranted(typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted')
   }, [])
 
   if (loading) return null
@@ -184,6 +189,41 @@ export default function GoalsPage() {
             </span>
           ) : saving ? 'שומר...' : 'שמור הגדרות'}
         </button>
+      </div>
+
+      {/* Sound & notifications */}
+      <div className="mx-5 mb-4 space-y-2">
+        <div className="bg-card rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">צליל הודעות</p>
+            <p className="text-xs text-muted-foreground mt-0.5">צליל כשמישהו שולח הודעה בתחרות</p>
+          </div>
+          <button
+            onClick={() => { const next = !soundOn; setSoundOn(next); setSoundEnabled(next) }}
+            className={cn('w-12 h-6 rounded-full transition-colors relative', soundOn ? 'bg-amber-400' : 'bg-muted')}
+          >
+            <span className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all', soundOn ? 'left-6' : 'left-0.5')} />
+          </button>
+        </div>
+
+        <div className="bg-card rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">התראות דפדפן</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {notifGranted ? 'מופעל — תקבל התראות גם כשהאפליקציה סגורה' : 'לחץ להפעלה'}
+            </p>
+          </div>
+          {notifGranted ? (
+            <span className="text-xs text-emerald-400 font-semibold">פעיל ✓</span>
+          ) : (
+            <button
+              onClick={async () => { const ok = await requestNotificationPermission(); setNotifGranted(ok) }}
+              className="text-xs bg-amber-400 text-black font-bold px-3 py-1.5 rounded-lg active:scale-95"
+            >
+              אפשר
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Floating button toggle */}
