@@ -214,6 +214,10 @@ export async function cancelChallenge(challengeId: string, message: string): Pro
   })
 }
 
+export async function hardDeleteChallenge(challengeId: string): Promise<void> {
+  await deleteDoc(doc(db, 'challenges', challengeId))
+}
+
 export async function softDeleteChallenge(challengeId: string, userId: string): Promise<void> {
   const ref = doc(db, 'challenges', challengeId)
   await updateDoc(ref, { deletedBy: arrayUnion(userId) })

@@ -8,7 +8,7 @@ import { NavBar } from '@/components/NavBar'
 import { LoginScreen } from '@/components/LoginScreen'
 import {
   createChallenge, requestJoinChallenge, approveJoinRequest, rejectJoinRequest,
-  removeParticipant, cancelChallenge, softDeleteChallenge, leaveChallenge,
+  removeParticipant, cancelChallenge, softDeleteChallenge, hardDeleteChallenge, leaveChallenge,
   subscribeToMyChallenges, getChallengeByCode,
   updateChallengeScores, sendChallengeMessage, subscribeToChallengeMessages,
 } from '@/lib/firestore'
@@ -84,6 +84,11 @@ function ChallengeCard({
 
   async function handleDelete() {
     await softDeleteChallenge(c.id, userId)
+    onRefresh()
+  }
+
+  async function handleHardDelete() {
+    await hardDeleteChallenge(c.id)
     onRefresh()
   }
 
@@ -281,10 +286,10 @@ function ChallengeCard({
                     <Ban size={13} /> בטל תחרות
                   </button>
                   <button
-                    onClick={handleDelete}
+                    onClick={handleHardDelete}
                     className="h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
-                    <Trash2 size={13} /> מחק
+                    <Trash2 size={13} /> מחק לכולם
                   </button>
                 </div>
               ) : (
