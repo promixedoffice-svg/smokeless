@@ -51,6 +51,7 @@ export interface Challenge {
   endDate: string
   status: 'pending' | 'pending_approval' | 'active' | 'cancelled' | 'completed'
   type: 'weekly' | 'monthly'
+  challengeCode: string
   creatorTotal: number
   participantTotal: number
   cancellationMessage?: string

@@ -9,8 +9,7 @@ import { LoginScreen } from '@/components/LoginScreen'
 import {
   createChallenge, requestJoinChallenge, approveJoinRequest, rejectJoinRequest,
   removeParticipant, cancelChallenge, softDeleteChallenge, leaveChallenge,
-  subscribeToMyChallenges,
-  getUserByInviteCode, getPendingChallengeByCreator,
+  subscribeToMyChallenges, getChallengeByCode,
   updateChallengeScores, sendChallengeMessage, subscribeToChallengeMessages,
 } from '@/lib/firestore'
 import { Challenge, ChallengeMessage } from '@/types'
@@ -146,6 +145,14 @@ function ChallengeCard({
             <div className="bg-red-500/10 border border-red-500/25 rounded-xl p-3">
               <p className="text-xs text-red-400 font-semibold mb-1">הודעת ביטול:</p>
               <p className="text-sm text-foreground">{c.cancellationMessage}</p>
+            </div>
+          )}
+
+          {/* Show challenge code to creator when pending */}
+          {c.status === 'pending' && isCreator && (
+            <div className="bg-amber-400/10 border border-amber-400/25 rounded-xl p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">שתף את הקוד הזה עם החבר:</p>
+              <p className="font-mono font-black text-2xl tracking-widest text-amber-400">{c.challengeCode}</p>
             </div>
           )}
 
@@ -346,21 +353,14 @@ export default function FriendsPage() {
     setJoinError('')
 
     try {
-      const creator = await getUserByInviteCode(joinCode.trim())
-      if (!creator) {
-        setJoinError('קוד לא נמצא. בדוק שוב.')
-        setJoinLoading(false)
-        return
-      }
-      if (creator.uid === user!.uid) {
-        setJoinError('לא ניתן להצטרף לאתגר שלך עצמך')
-        setJoinLoading(false)
-        return
-      }
-
-      const challenge = await getPendingChallengeByCreator(creator.uid)
+      const challenge = await getChallengeByCode(joinCode.trim())
       if (!challenge) {
-        setJoinError('אין אתגר פתוח מאותו משתמש. בקש ממנו ליצור תחרות.')
+        setJoinError('קוד תחרות לא נמצא. בדוק שוב.')
+        setJoinLoading(false)
+        return
+      }
+      if (challenge.creatorId === user!.uid) {
+        setJoinError('לא ניתן להצטרף לתחרות שפתחת')
         setJoinLoading(false)
         return
       }
@@ -407,16 +407,11 @@ export default function FriendsPage() {
         </div>
       </div>
 
-      {/* My Invite Code */}
-      <div className="mx-5 bg-card rounded-2xl p-4 mb-5 flex items-center justify-between">
-        <div>
-          <div className="text-xs text-muted-foreground mb-1">הקוד שלי לשיתוף</div>
-          <div className="font-mono font-black text-2xl tracking-widest text-amber-400">
-            {profile.inviteCode}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">שתף עם חבר כדי שיצטרף לתחרות שלך</div>
-        </div>
-        <div className="text-3xl">🏷️</div>
+      {/* Info banner */}
+      <div className="mx-5 bg-card rounded-2xl p-4 mb-5">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          כל תחרות שתצור תקבל <span className="text-amber-400 font-semibold">קוד ייחודי</span> משלה — שתף אותו עם החבר שרוצה להצטרף לאותה תחרות ספציפית.
+        </p>
       </div>
 
       {challenges.length === 0 ? (
@@ -473,11 +468,8 @@ export default function FriendsPage() {
               <button onClick={() => setShowCreate(false)}><X size={20} className="text-muted-foreground" /></button>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              שתף את הקוד שלך עם חבר לאחר יצירת התחרות. הוא יצטרך לבקש הצטרפות ואתה תאשר.
+              לאחר יצירת התחרות תקבל <span className="text-amber-400 font-semibold">קוד ייחודי</span> — שתף אותו עם החבר שרוצה להצטרף לתחרות הזו.
             </p>
-            <div className="font-mono text-center text-3xl font-black text-amber-400 py-3 bg-amber-400/10 rounded-2xl mb-4">
-              {profile.inviteCode}
-            </div>
             <div className="space-y-2">
               <button
                 onClick={() => handleCreate('weekly')}

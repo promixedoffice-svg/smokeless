@@ -122,10 +122,10 @@ export async function getUserByInviteCode(code: string): Promise<UserProfile | n
   return snap.docs[0].data() as UserProfile
 }
 
-export async function getPendingChallengeByCreator(creatorId: string): Promise<Challenge | null> {
+export async function getChallengeByCode(code: string): Promise<Challenge | null> {
   const q = query(
     collection(db, 'challenges'),
-    where('creatorId', '==', creatorId),
+    where('challengeCode', '==', code.toUpperCase()),
     where('status', '==', 'pending')
   )
   const snap = await getDocs(q)
@@ -138,6 +138,7 @@ export async function createChallenge(creator: UserProfile, type: 'weekly' | 'mo
   const endDate = type === 'weekly'
     ? format(new Date(now.getTime() + 7 * 86400000), 'yyyy-MM-dd')
     : format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd')
+  const challengeCode = Math.random().toString(36).substring(2, 8).toUpperCase()
   const ref = await addDoc(collection(db, 'challenges'), {
     creatorId: creator.uid,
     creatorName: creator.displayName,
@@ -146,6 +147,7 @@ export async function createChallenge(creator: UserProfile, type: 'weekly' | 'mo
     endDate,
     type,
     status: 'pending',
+    challengeCode,
     creatorTotal: 0,
     participantTotal: 0,
   })
