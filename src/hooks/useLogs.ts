@@ -6,6 +6,7 @@ import {
   subscribeToTodayLogs,
   logCigarette,
   deleteLastCigarette,
+  updateChallengeScores,
   todayDate,
 } from '@/lib/firestore'
 
@@ -29,7 +30,6 @@ export function useLogs(userId: string | undefined) {
 
   const log = useCallback(async () => {
     if (!userId) return
-    // Optimistic update — feels instant
     const optimistic: CigaretteLog = {
       id: '__optimistic__',
       userId,
@@ -38,7 +38,7 @@ export function useLogs(userId: string | undefined) {
     }
     setLogs((prev) => [optimistic, ...prev])
     await logCigarette(userId)
-    // onSnapshot will replace with real data
+    updateChallengeScores(userId) // update challenge scores in background
   }, [userId])
 
   const undo = useCallback(async () => {

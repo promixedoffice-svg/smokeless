@@ -16,11 +16,12 @@ export function FloatingLogButton({ onLog, overLimit }: Props) {
   const [tapped, setTapped] = useState(false)
 
   useEffect(() => {
-    setHidden(localStorage.getItem(STORAGE_KEY) === 'true')
+    // Hidden by default — user must enable in settings
+    setHidden(localStorage.getItem(STORAGE_KEY) !== 'true')
   }, [])
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, 'true')
+    localStorage.removeItem(STORAGE_KEY)
     setHidden(true)
   }
 

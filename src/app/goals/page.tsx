@@ -25,7 +25,7 @@ export default function GoalsPage() {
   const [floatingBtn, setFloatingBtn] = useState(false)
 
   useEffect(() => {
-    setFloatingBtn(localStorage.getItem('smokeless_floating_btn_hidden') !== 'true')
+    setFloatingBtn(localStorage.getItem('smokeless_floating_btn_hidden') === 'true')
   }, [])
 
   if (loading) return null
@@ -197,7 +197,8 @@ export default function GoalsPage() {
             onClick={() => {
               const next = !floatingBtn
               setFloatingBtn(next)
-              localStorage.setItem('smokeless_floating_btn_hidden', next ? 'false' : 'true')
+              if (next) localStorage.setItem('smokeless_floating_btn_hidden', 'true')
+              else localStorage.removeItem('smokeless_floating_btn_hidden')
             }}
             className={cn(
               'w-12 h-6 rounded-full transition-colors relative',
