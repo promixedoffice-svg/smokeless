@@ -68,7 +68,7 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
     }))
     .sort((a, b) => a.total - b.total) // fewer cigs = better
 
-  const pendingList = Object.values(c.pendingRequests ?? {}) as ChallengeParticipant[]
+  const pendingList = (Object.values(c.pendingRequests ?? {}) as (ChallengeParticipant | null)[]).filter(Boolean) as ChallengeParticipant[]
 
   const statusLabel = c.status === 'active' ? 'פעיל' : c.status === 'pending' ? 'ממתין' : c.status === 'cancelled' ? 'בוטל' : 'הסתיים'
   const statusColor = c.status === 'active' ? 'text-emerald-400' : c.status === 'pending' ? 'text-amber-400' : 'text-muted-foreground'

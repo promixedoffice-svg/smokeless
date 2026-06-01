@@ -1,7 +1,7 @@
 import {
   doc, getDoc, setDoc, addDoc, deleteDoc,
   collection, query, where, getDocs, onSnapshot,
-  orderBy, arrayUnion, arrayRemove, Unsubscribe, updateDoc,
+  orderBy, arrayUnion, arrayRemove, Unsubscribe, updateDoc, deleteField,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { UserProfile, CigaretteLog, DayStats, Challenge, ChallengeMessage, ChallengeParticipant } from '@/types'
@@ -188,7 +188,7 @@ export async function approveJoinRequest(challengeId: string, userId: string): P
     [`scores.${userId}`]: 0,
     participantIds: arrayUnion(userId),
     pendingRequestIds: arrayRemove(userId),
-    [`pendingRequests.${userId}`]: null,  // can't delete nested field this way
+    [`pendingRequests.${userId}`]: deleteField(),
   }
   // Check if challenge should become active
   const nonCreatorCount = (c.participantIds ?? []).filter(id => id !== c.creatorId).length + 1
@@ -200,7 +200,7 @@ export async function approveJoinRequest(challengeId: string, userId: string): P
 
 export async function rejectJoinRequest(challengeId: string, userId: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
-    [`pendingRequests.${userId}`]: null,
+    [`pendingRequests.${userId}`]: deleteField(),
     pendingRequestIds: arrayRemove(userId),
   })
 }
@@ -211,14 +211,16 @@ export async function startChallenge(challengeId: string): Promise<void> {
 
 export async function removeParticipantFromGroup(challengeId: string, userId: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
-    [`participants.${userId}`]: null,
+    [`participants.${userId}`]: deleteField(),
+    [`scores.${userId}`]: deleteField(),
     participantIds: arrayRemove(userId),
   })
 }
 
 export async function leaveChallenge(challengeId: string, userId: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
-    [`participants.${userId}`]: null,
+    [`participants.${userId}`]: deleteField(),
+    [`scores.${userId}`]: deleteField(),
     participantIds: arrayRemove(userId),
   })
 }
