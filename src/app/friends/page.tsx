@@ -8,7 +8,7 @@ import { NavBar } from '@/components/NavBar'
 import { LoginScreen } from '@/components/LoginScreen'
 import {
   createChallenge, requestJoinChallenge, approveJoinRequest, rejectJoinRequest,
-  removeParticipant, cancelChallenge, deleteChallenge,
+  removeParticipant, cancelChallenge, deleteChallenge, leaveChallenge,
   subscribeToMyChallenges,
   getUserByInviteCode, getPendingChallengeByCreator,
   updateChallengeScores, sendChallengeMessage, subscribeToChallengeMessages,
@@ -69,6 +69,11 @@ function ChallengeCard({
 
   async function handleRemove() {
     await removeParticipant(c.id)
+    onRefresh()
+  }
+
+  async function handleLeave() {
+    await leaveChallenge(c.id)
     onRefresh()
   }
 
@@ -228,6 +233,18 @@ function ChallengeCard({
             </div>
           )}
 
+          {/* Participant actions */}
+          {isParticipant && c.status === 'active' && (
+            <div className="border-t border-border pt-3">
+              <button
+                onClick={handleLeave}
+                className="w-full h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <X size={13} /> עזוב תחרות
+              </button>
+            </div>
+          )}
+
           {/* Creator actions */}
           {isCreator && c.status !== 'cancelled' && c.status !== 'completed' && (
             <div className="border-t border-border pt-3 space-y-2">
@@ -368,7 +385,7 @@ export default function FriendsPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setShowJoin(true)}
+            onClick={() => { setShowJoin(true); setJoinLoading(false); setJoinError(''); setJoinCode(''); setJoinSuccess(false) }}
             className="h-9 px-3 rounded-xl border border-border text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all"
           >
             <Link2 size={14} /> הצטרף

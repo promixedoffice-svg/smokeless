@@ -195,6 +195,16 @@ export async function removeParticipant(challengeId: string): Promise<void> {
   })
 }
 
+export async function leaveChallenge(challengeId: string): Promise<void> {
+  await updateDoc(doc(db, 'challenges', challengeId), {
+    participantId: null,
+    participantName: null,
+    participantPhoto: null,
+    status: 'pending',
+    participantTotal: 0,
+  })
+}
+
 export async function cancelChallenge(challengeId: string, message: string): Promise<void> {
   await updateDoc(doc(db, 'challenges', challengeId), {
     status: 'cancelled',
