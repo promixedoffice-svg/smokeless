@@ -10,6 +10,7 @@ import { LoginScreen } from '@/components/LoginScreen'
 import { GoalSetupModal } from '@/components/GoalSetupModal'
 import { DailyMotivationBanner } from '@/components/DailyMotivationBanner'
 import { LogoutMenu } from '@/components/LogoutMenu'
+import { FloatingLogButton } from '@/components/FloatingLogButton'
 import { cn } from '@/lib/utils'
 import { Undo2, Trophy } from 'lucide-react'
 import { subscribeToMyChallenges, updateChallengeScores } from '@/lib/firestore'
@@ -227,6 +228,7 @@ export default function HomePage() {
         </div>
       )}
 
+      <FloatingLogButton onLog={handleLog} overLimit={overLimit} />
       <NavBar />
       <GoalSetupModal open={showGoalSetup} onClose={() => setShowGoalSetup(false)} />
     </div>

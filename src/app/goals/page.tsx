@@ -9,6 +9,7 @@ import { LoginScreen } from '@/components/LoginScreen'
 import { saveUserProfile, resetAllUserLogs } from '@/lib/firestore'
 import { CheckCircle2, Trash2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEffect } from 'react'
 
 export default function GoalsPage() {
   const { user, profile, refreshProfile, loading } = useAuth()
@@ -21,6 +22,11 @@ export default function GoalsPage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
+  const [floatingBtn, setFloatingBtn] = useState(false)
+
+  useEffect(() => {
+    setFloatingBtn(localStorage.getItem('smokeless_floating_btn_hidden') !== 'true')
+  }, [])
 
   if (loading) return null
   if (!user) return <LoginScreen />
@@ -178,6 +184,32 @@ export default function GoalsPage() {
             </span>
           ) : saving ? 'שומר...' : 'שמור הגדרות'}
         </button>
+      </div>
+
+      {/* Floating button toggle */}
+      <div className="mx-5 mb-4">
+        <div className="bg-card rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">כפתור צף מהיר</p>
+            <p className="text-xs text-muted-foreground mt-0.5">כפתור 🚬 צף בדף הבית</p>
+          </div>
+          <button
+            onClick={() => {
+              const next = !floatingBtn
+              setFloatingBtn(next)
+              localStorage.setItem('smokeless_floating_btn_hidden', next ? 'false' : 'true')
+            }}
+            className={cn(
+              'w-12 h-6 rounded-full transition-colors relative',
+              floatingBtn ? 'bg-amber-400' : 'bg-muted'
+            )}
+          >
+            <span className={cn(
+              'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all',
+              floatingBtn ? 'left-6' : 'left-0.5'
+            )} />
+          </button>
+        </div>
       </div>
 
       {/* Reset Data */}
