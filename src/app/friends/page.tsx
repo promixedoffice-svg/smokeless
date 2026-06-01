@@ -270,73 +270,72 @@ function ChallengeCard({
             </div>
           )}
 
-          {/* Participant actions */}
-          {isParticipant && (
-            <div className="border-t border-border pt-3 space-y-2">
-              {c.status === 'active' && (
-                <button
-                  onClick={handleLeave}
-                  className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                >
-                  <X size={13} /> עזוב תחרות
-                </button>
-              )}
+          {/* Actions — available to all parties */}
+          <div className="border-t border-border pt-3 space-y-2">
+
+            {/* Participant: leave active challenge */}
+            {isParticipant && c.status === 'active' && (
               <button
-                onClick={handleDelete}
-                className="w-full h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                onClick={handleLeave}
+                className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all"
               >
-                <Trash2 size={13} /> מחק מהרשימה שלי
+                <X size={13} /> עזוב תחרות
               </button>
-            </div>
-          )}
+            )}
 
-          {/* Creator actions */}
-          {isCreator && c.status !== 'cancelled' && c.status !== 'completed' && (
-            <div className="border-t border-border pt-3 space-y-2">
-              {c.status === 'active' && (
+            {/* Creator: manage active challenge */}
+            {isCreator && c.status === 'active' && (
+              <button
+                onClick={handleRemove}
+                className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <X size={13} /> הסר משתתף
+              </button>
+            )}
+
+            {/* Creator: cancel with message */}
+            {isCreator && (c.status === 'pending' || c.status === 'pending_approval' || c.status === 'active') && (
+              !showCancel ? (
                 <button
-                  onClick={handleRemove}
-                  className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  onClick={() => setShowCancel(true)}
+                  className="w-full h-9 rounded-xl border border-amber-500/40 text-amber-400 text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                 >
-                  <X size={13} /> הסר משתתף
+                  <Ban size={13} /> בטל תחרות עם הודעה
                 </button>
-              )}
-
-              {!showCancel ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setShowCancel(true)}
-                    className="h-9 rounded-xl border border-amber-500/40 text-amber-400 text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
-                  >
-                    <Ban size={13} /> בטל תחרות
-                  </button>
-                  <button
-                    onClick={handleHardDelete}
-                    className="h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
-                  >
-                    <Trash2 size={13} /> מחק לכולם
-                  </button>
-                </div>
               ) : (
                 <div className="space-y-2">
                   <input
                     value={cancelMsg}
                     onChange={(e) => setCancelMsg(e.target.value)}
-                    placeholder="הודעת ביטול לחברים (אופציונלי)"
+                    placeholder="הודעת ביטול (אופציונלי)"
                     className="w-full bg-muted rounded-xl px-3 py-2 text-sm focus:outline-none"
                   />
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => setShowCancel(false)} className="h-9 rounded-xl bg-muted text-xs active:scale-95">
-                      ביטול
-                    </button>
-                    <button onClick={handleCancel} className="h-9 rounded-xl bg-amber-400 text-black text-xs font-semibold active:scale-95">
-                      אשר ביטול
-                    </button>
+                    <button onClick={() => setShowCancel(false)} className="h-9 rounded-xl bg-muted text-xs active:scale-95">ביטול</button>
+                    <button onClick={handleCancel} className="h-9 rounded-xl bg-amber-400 text-black text-xs font-semibold active:scale-95">אשר</button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+              )
+            )}
+
+            {/* Everyone: hide from my list (soft delete) */}
+            <button
+              onClick={handleDelete}
+              className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+            >
+              <Trash2 size={13} /> הסתר מהרשימה שלי
+            </button>
+
+            {/* Creator only: delete for everyone (hard delete) */}
+            {isCreator && (
+              <button
+                onClick={handleHardDelete}
+                className="w-full h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <Trash2 size={13} /> מחק לכולם לגמרי
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
