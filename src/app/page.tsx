@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLogs } from '@/hooks/useLogs'
 import { NavBar } from '@/components/NavBar'
@@ -20,22 +20,24 @@ export default function HomePage() {
   const [tapped, setTapped] = useState(false)
 
   const dailyGoal = profile?.dailyGoal ?? 10
+  const pricePerCig = (profile?.pricePerPack ?? 35) / (profile?.cigarettesPerPack ?? 20)
+  const spentToday = count * pricePerCig
+  const goalSpendToday = dailyGoal * pricePerCig
+  const costDiff = goalSpendToday - spentToday
+  const overLimit = count > dailyGoal
   const progress = Math.min((count / dailyGoal) * 100, 100)
   const remaining = Math.max(dailyGoal - count, 0)
-  const pricePerCig = (profile?.pricePerPack ?? 35) / (profile?.cigarettesPerPack ?? 20)
-  const spentToday = (count * pricePerCig).toFixed(1)
-  const overLimit = count > dailyGoal
 
   async function handleLog() {
     setTapped(true)
-    setTimeout(() => setTapped(false), 300)
+    setTimeout(() => setTapped(false), 200)
     await log()
   }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-4xl animate-pulse">🚬</div>
+        <div className="text-5xl animate-pulse">🚬</div>
       </div>
     )
   }
@@ -43,9 +45,10 @@ export default function HomePage() {
   if (!user) return <LoginScreen />
 
   return (
-    <div className="min-h-screen bg-background pb-20 flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-background pb-28 flex flex-col" dir="rtl">
+
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-2">
+      <div className="flex items-center justify-between px-5 pt-14 pb-2">
         <div>
           <p className="text-muted-foreground text-sm">שלום, {profile?.displayName?.split(' ')[0]}</p>
           <h1 className="text-xl font-bold">היום</h1>
@@ -53,15 +56,14 @@ export default function HomePage() {
         <LogoutMenu onEditGoals={() => setShowGoalSetup(true)} />
       </div>
 
-      {/* Motivation Banner */}
       <DailyMotivationBanner />
 
       {/* Counter Ring */}
-      <div className="flex flex-col items-center mt-6 mb-4 px-4">
+      <div className="flex flex-col items-center mt-6 px-5">
         <div className={cn(
           'relative flex items-center justify-center rounded-full transition-all duration-300',
-          'w-44 h-44 border-8',
-          overLimit ? 'border-red-500/40' : count >= dailyGoal * 0.8 ? 'border-amber-400/40' : 'border-emerald-500/40'
+          'w-40 h-40 border-[6px]',
+          overLimit ? 'border-red-500/50' : count >= dailyGoal * 0.8 ? 'border-amber-400/50' : 'border-emerald-500/50'
         )}>
           <div className="text-center">
             <div className={cn(
@@ -70,12 +72,12 @@ export default function HomePage() {
             )}>
               {count}
             </div>
-            <div className="text-muted-foreground text-sm mt-1">מתוך {dailyGoal}</div>
+            <div className="text-muted-foreground text-xs mt-1">מתוך {dailyGoal}</div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full max-w-xs mt-4">
+        <div className="w-full max-w-[280px] mt-4">
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
@@ -85,7 +87,7 @@ export default function HomePage() {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+          <div className="flex justify-between mt-1.5 text-xs text-muted-foreground">
             <span>{overLimit ? `עברת ב-${count - dailyGoal}` : `נשארו ${remaining}`}</span>
             <span>{Math.round(progress)}%</span>
           </div>
@@ -93,34 +95,28 @@ export default function HomePage() {
       </div>
 
       {/* Status Message */}
-      <div className="text-center px-4 mb-6 min-h-[40px]">
-        {count === 0 && (
-          <p className="text-emerald-400 font-medium">מצוין! עוד לא עישנת היום 🌟</p>
-        )}
+      <div className="text-center px-5 mt-3 mb-5 min-h-[24px]">
+        {count === 0 && <p className="text-emerald-400 font-medium text-sm">מצוין! עוד לא עישנת היום 🌟</p>}
         {count > 0 && !overLimit && count < dailyGoal && (
           <p className="text-muted-foreground text-sm">
             {remaining === 1 ? 'סיגריה אחת נשארה ליעד' : `עוד ${remaining} סיגריות ליעד`}
           </p>
         )}
-        {count === dailyGoal && (
-          <p className="text-amber-400 font-medium">הגעת ליעד היומי – עצור כאן! 💪</p>
-        )}
-        {overLimit && (
-          <p className="text-red-400 font-medium">עברת את היעד ב-{count - dailyGoal} סיגריות</p>
-        )}
+        {count === dailyGoal && <p className="text-amber-400 font-medium text-sm">הגעת ליעד – עצור כאן! 💪</p>}
+        {overLimit && <p className="text-red-400 font-medium text-sm">עברת את היעד ב-{count - dailyGoal} סיגריות</p>}
       </div>
 
       {/* BIG LOG BUTTON */}
-      <div className="flex flex-col items-center gap-4 px-6">
+      <div className="flex flex-col items-center gap-3 px-5">
         <button
           onClick={handleLog}
           className={cn(
-            'w-full max-w-xs h-24 rounded-3xl font-black text-2xl text-black',
-            'transition-all duration-150 shadow-lg select-none',
-            tapped ? 'scale-95' : 'scale-100',
+            'w-full max-w-sm h-20 rounded-3xl font-black text-xl text-black',
+            'transition-all duration-150 shadow-lg select-none active:scale-95',
+            tapped ? 'scale-95 brightness-90' : 'scale-100',
             overLimit
-              ? 'bg-red-500 hover:bg-red-400 shadow-red-500/30'
-              : 'bg-amber-400 hover:bg-amber-300 shadow-amber-400/30'
+              ? 'bg-red-500 shadow-red-500/25'
+              : 'bg-amber-400 shadow-amber-400/25'
           )}
         >
           🚬 + סיגריה
@@ -128,30 +124,62 @@ export default function HomePage() {
 
         <button
           onClick={undo}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm transition-colors"
+          className="flex items-center gap-2 text-muted-foreground active:text-foreground text-sm py-2 px-4"
         >
-          <Undo2 size={16} />
+          <Undo2 size={15} />
           בטל דיווח אחרון
         </button>
       </div>
 
+      {/* Cost Incentive Card */}
+      <div className={cn(
+        'mx-5 mt-5 rounded-2xl p-4 border',
+        count === 0
+          ? 'bg-emerald-500/8 border-emerald-500/25'
+          : overLimit
+          ? 'bg-red-500/8 border-red-500/25'
+          : 'bg-emerald-500/8 border-emerald-500/25'
+      )}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">עלות מול יעד היום</p>
+            {overLimit ? (
+              <>
+                <p className="text-xl font-black text-red-400">
+                  +₪{Math.abs(costDiff).toFixed(1)} מעל
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {count - dailyGoal} סיגריות מעל היעד
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xl font-black text-emerald-400">
+                  {count === 0 ? `חיסכון אפשרי ₪${goalSpendToday.toFixed(1)}` : `חסכת ₪${costDiff.toFixed(1)}`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {count === 0 ? 'אם לא תעשן היום בכלל' : `${dailyGoal - count} פחות מהיעד`}
+                </p>
+              </>
+            )}
+          </div>
+          <div className="text-4xl mr-2">
+            {overLimit ? '💸' : count === 0 ? '💰' : '✅'}
+          </div>
+        </div>
+      </div>
+
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-3 px-4 mt-8">
+      <div className="grid grid-cols-2 gap-3 px-5 mt-4">
         <div className="bg-card rounded-2xl p-4 text-center">
-          <div className="text-2xl font-bold text-amber-400">₪{spentToday}</div>
+          <div className="text-2xl font-bold text-amber-400">₪{spentToday.toFixed(1)}</div>
           <div className="text-xs text-muted-foreground mt-1">הוצאת היום</div>
         </div>
         <div className="bg-card rounded-2xl p-4 text-center">
-          <div className={cn('text-2xl font-bold', overLimit ? 'text-red-400' : 'text-emerald-400')}>
-            {profile?.streak ?? 0}
+          <div className={cn('text-2xl font-bold', (profile?.streak ?? 0) > 0 ? 'text-emerald-400' : 'text-muted-foreground')}>
+            {profile?.streak ?? 0} 🔥
           </div>
           <div className="text-xs text-muted-foreground mt-1">ימי רצף</div>
-        </div>
-        <div className="bg-card rounded-2xl p-4 text-center">
-          <div className="text-2xl font-bold text-blue-400">
-            {dailyGoal - count > 0 ? `${dailyGoal - count}` : '0'}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">נשאר ליעד</div>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ export interface UserProfile {
   dailyGoal: number
   pricePerPack: number
   cigarettesPerPack: number
+  cigaretteBrand?: string
   joinedAt: string
   lastMotivationDate?: string
   inviteCode: string

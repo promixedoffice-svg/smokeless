@@ -120,11 +120,18 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   html {
     @apply font-sans;
+  }
+  input[type='range'] {
+    height: 6px;
+    border-radius: 9999px;
   }
 }
