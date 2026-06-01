@@ -59,10 +59,11 @@ export function subscribeToTodayLogs(
     collection(db, 'logs'),
     where('userId', '==', userId),
     where('date', '==', todayDate()),
-    orderBy('timestamp', 'desc')
   )
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as CigaretteLog)))
+    const logs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CigaretteLog))
+    logs.sort((a, b) => b.timestamp - a.timestamp)
+    callback(logs)
   })
 }
 
@@ -116,6 +117,13 @@ export async function getMonthTotal(userId: string): Promise<number> {
     total += snap.size
   }
   return total
+}
+
+export async function resetAllUserLogs(userId: string): Promise<void> {
+  const q = query(collection(db, 'logs'), where('userId', '==', userId))
+  const snap = await getDocs(q)
+  const deletions = snap.docs.map((d) => deleteDoc(d.ref))
+  await Promise.all(deletions)
 }
 
 // --- Challenges ---

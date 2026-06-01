@@ -6,6 +6,7 @@ import {
   subscribeToTodayLogs,
   logCigarette,
   deleteLastCigarette,
+  todayDate,
 } from '@/lib/firestore'
 
 export function useLogs(userId: string | undefined) {
@@ -20,7 +21,7 @@ export function useLogs(userId: string | undefined) {
     }
     setLoading(true)
     const unsub = subscribeToTodayLogs(userId, (l) => {
-      setLogs(l)
+      setLogs(l.filter((x) => x.id !== '__optimistic__'))
       setLoading(false)
     })
     return unsub
@@ -28,11 +29,21 @@ export function useLogs(userId: string | undefined) {
 
   const log = useCallback(async () => {
     if (!userId) return
+    // Optimistic update — feels instant
+    const optimistic: CigaretteLog = {
+      id: '__optimistic__',
+      userId,
+      timestamp: Date.now(),
+      date: todayDate(),
+    }
+    setLogs((prev) => [optimistic, ...prev])
     await logCigarette(userId)
+    // onSnapshot will replace with real data
   }, [userId])
 
   const undo = useCallback(async () => {
     if (!userId || logs.length === 0) return
+    setLogs((prev) => prev.slice(1))
     await deleteLastCigarette(userId)
   }, [userId, logs])
 

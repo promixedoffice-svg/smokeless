@@ -6,8 +6,8 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NavBar } from '@/components/NavBar'
 import { LoginScreen } from '@/components/LoginScreen'
-import { saveUserProfile } from '@/lib/firestore'
-import { CheckCircle2 } from 'lucide-react'
+import { saveUserProfile, resetAllUserLogs } from '@/lib/firestore'
+import { CheckCircle2, Trash2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function GoalsPage() {
@@ -18,6 +18,9 @@ export default function GoalsPage() {
   const [cigaretteBrand, setCigaretteBrand] = useState(profile?.cigaretteBrand ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [resetDone, setResetDone] = useState(false)
 
   if (loading) return null
   if (!user) return <LoginScreen />
@@ -26,6 +29,16 @@ export default function GoalsPage() {
   const dailyCost = (dailyGoal * pricePerCig).toFixed(1)
   const weeklyCost = (dailyGoal * 7 * pricePerCig).toFixed(0)
   const monthlyCost = (dailyGoal * 30 * pricePerCig).toFixed(0)
+
+  async function handleReset() {
+    if (!user) return
+    setResetting(true)
+    await resetAllUserLogs(user.uid)
+    setResetting(false)
+    setResetDone(true)
+    setShowResetConfirm(false)
+    setTimeout(() => setResetDone(false), 3000)
+  }
 
   async function handleSave() {
     if (!profile) return
@@ -165,6 +178,54 @@ export default function GoalsPage() {
             </span>
           ) : saving ? 'שומר...' : 'שמור הגדרות'}
         </button>
+      </div>
+
+      {/* Reset Data */}
+      <div className="mx-5 mt-6 mb-2">
+        <div className="bg-card rounded-2xl p-5 border border-red-500/20">
+          <div className="flex items-start gap-3 mb-4">
+            <AlertTriangle size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-400">איפוס נתונים</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                מוחק את כל היסטוריית הסיגריות. ההגדרות שלך יישמרו. פעולה זו בלתי הפיכה.
+              </p>
+            </div>
+          </div>
+
+          {!showResetConfirm ? (
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="w-full h-11 rounded-xl border border-red-500/40 text-red-400 text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
+              <Trash2 size={15} />
+              מחק את כל ההיסטוריה
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-center text-sm font-semibold text-red-400">בטוח שרוצה למחוק הכל?</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="h-11 rounded-xl bg-muted text-sm font-semibold active:scale-95 transition-all"
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={handleReset}
+                  disabled={resetting}
+                  className="h-11 rounded-xl bg-red-500 text-white text-sm font-semibold active:scale-95 transition-all disabled:opacity-60"
+                >
+                  {resetting ? 'מוחק...' : 'כן, מחק'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {resetDone && (
+            <p className="text-center text-xs text-emerald-400 mt-2 font-medium">ההיסטוריה נמחקה ✓</p>
+          )}
+        </div>
       </div>
 
       <NavBar />
