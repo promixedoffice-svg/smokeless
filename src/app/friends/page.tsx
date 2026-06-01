@@ -326,7 +326,7 @@ export default function FriendsPage() {
       setJoinLoading(false)
       return
     }
-    if (creator.uid === user.uid) {
+    if (creator.uid === user!.uid) {
       setJoinError('לא ניתן להצטרף לאתגר שלך עצמך')
       setJoinLoading(false)
       return
