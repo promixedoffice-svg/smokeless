@@ -327,10 +327,10 @@ export default function FriendsPage() {
     try {
       const challenge = await getChallengeByCode(joinCode.trim())
       if (!challenge) { setJoinError('קוד תחרות לא נמצא.'); setJoinLoading(false); return }
-      if (challenge.creatorId === user.uid || (challenge.participantIds ?? []).includes(user.uid)) {
+      if (challenge.creatorId === user!.uid || (challenge.participantIds ?? []).includes(user!.uid)) {
         setJoinError('אתה כבר בתחרות הזו'); setJoinLoading(false); return
       }
-      if ((challenge.pendingRequestIds ?? []).includes(user.uid)) {
+      if ((challenge.pendingRequestIds ?? []).includes(user!.uid)) {
         setJoinError('כבר שלחת בקשה — ממתין לאישור'); setJoinLoading(false); return
       }
       if (challenge.status === 'cancelled' || challenge.status === 'completed') {
