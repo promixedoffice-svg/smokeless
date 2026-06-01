@@ -37,7 +37,6 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 export function showNotification(title: string, body: string) {
-  if (!isSoundEnabled()) return
   if (typeof window === 'undefined' || !('Notification' in window)) return
   if (Notification.permission !== 'granted') return
   if (document.visibilityState === 'visible') return // app is open — use sound instead

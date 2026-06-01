@@ -37,21 +37,24 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
   const [copied, setCopied] = useState(false)
 
   const prevMsgCount = useRef(0)
+  const isInitialMsg = useRef(true)
   useEffect(() => {
-    if (!expanded || c.status === 'cancelled') return
+    if (c.status === 'cancelled' || c.status === 'completed') return
+    isInitialMsg.current = true
     const unsub = subscribeToChallengeMessages(c.id, (newMsgs) => {
-      if (newMsgs.length > prevMsgCount.current) {
+      if (!isInitialMsg.current && newMsgs.length > prevMsgCount.current) {
         const latest = newMsgs[newMsgs.length - 1]
         if (latest && latest.userId !== userId) {
           playMessageSound()
           showNotification('הודעה חדשה בתחרות', `${latest.userName.split(' ')[0]}: ${latest.content}`)
         }
       }
+      isInitialMsg.current = false
       prevMsgCount.current = newMsgs.length
       setMessages(newMsgs)
     })
     return unsub
-  }, [expanded, c.id, c.status, userId])
+  }, [c.id, c.status, userId])
 
   // Build sorted leaderboard
   const scores = c.scores ?? {}
@@ -341,7 +344,7 @@ export default function FriendsPage() {
       setJoinSuccess(true)
       setJoinCode('')
       setTimeout(() => { setShowJoin(false); setJoinSuccess(false); refresh() }, 2000)
-    } catch { setJoinError('שגיאה — בדוק שה-Firestore Rules עודכנו') }
+    } catch (e: unknown) { setJoinError(`שגיאה: ${e instanceof Error ? e.message : String(e)}`) }
     finally { setJoinLoading(false) }
   }
 
