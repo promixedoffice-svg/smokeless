@@ -8,7 +8,7 @@ import { NavBar } from '@/components/NavBar'
 import { LoginScreen } from '@/components/LoginScreen'
 import {
   createChallenge, joinChallenge, subscribeToMyChallenges,
-  getUserByInviteCode, updateChallengeScores,
+  getUserByInviteCode, getPendingChallengeByCreator, updateChallengeScores,
 } from '@/lib/firestore'
 import { Challenge } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -51,16 +51,7 @@ export default function FriendsPage() {
     setJoinLoading(true)
     setJoinError('')
 
-    const pending = challenges.find(
-      (c) => c.status === 'pending' && c.creatorId !== user!.uid
-    )
-    if (pending) {
-      setJoinError('כבר יש לך אתגר ממתין')
-      setJoinLoading(false)
-      return
-    }
-
-    const creator = await getUserByInviteCode(joinCode)
+    const creator = await getUserByInviteCode(joinCode.trim())
     if (!creator) {
       setJoinError('קוד לא נמצא. בדוק שוב.')
       setJoinLoading(false)
@@ -72,14 +63,14 @@ export default function FriendsPage() {
       return
     }
 
-    const existing = challenges.find((c) => c.status === 'pending' && c.creatorId === creator.uid)
-    if (!existing) {
-      setJoinError('אין אתגר פתוח מאותו משתמש')
+    const challenge = await getPendingChallengeByCreator(creator.uid)
+    if (!challenge) {
+      setJoinError('החבר לא יצר אתגר פתוח עדיין. בקש ממנו ליצור תחרות.')
       setJoinLoading(false)
       return
     }
 
-    await joinChallenge(existing.id, profile)
+    await joinChallenge(challenge.id, profile)
     setJoinLoading(false)
     setShowJoin(false)
     setJoinCode('')

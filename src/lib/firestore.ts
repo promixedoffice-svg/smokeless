@@ -126,6 +126,17 @@ export async function resetAllUserLogs(userId: string): Promise<void> {
 
 // --- Challenges ---
 
+export async function getPendingChallengeByCreator(creatorId: string): Promise<Challenge | null> {
+  const q = query(
+    collection(db, 'challenges'),
+    where('creatorId', '==', creatorId),
+    where('status', '==', 'pending')
+  )
+  const snap = await getDocs(q)
+  if (snap.empty) return null
+  return { id: snap.docs[0].id, ...snap.docs[0].data() } as Challenge
+}
+
 export async function getUserByInviteCode(code: string): Promise<UserProfile | null> {
   const q = query(collection(db, 'users'), where('inviteCode', '==', code.toUpperCase()))
   const snap = await getDocs(q)
