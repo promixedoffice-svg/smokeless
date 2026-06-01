@@ -13,7 +13,7 @@ import {
   updateChallengeScores, sendChallengeMessage, subscribeToChallengeMessages,
 } from '@/lib/firestore'
 import { Challenge, ChallengeMessage } from '@/types'
-import { Trophy, Plus, Link2, X, Check, MessageCircle, Trash2, Ban, ChevronDown, ChevronUp, Send } from 'lucide-react'
+import { Trophy, Plus, Link2, X, Check, Trash2, Ban, ChevronDown, ChevronUp, Send, Share2, Copy, CheckCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const EMOJI_REACTIONS = ['💪', '😤', '🔥', '😂', '🏃', '🚬', '👑', '💸']
@@ -41,6 +41,18 @@ function ChallengeCard({
   const [sending, setSending] = useState(false)
   const [showCancel, setShowCancel] = useState(false)
   const [cancelMsg, setCancelMsg] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  async function handleShare() {
+    const text = `הצטרף לתחרות שלי ב-Smokless!\nקוד תחרות: ${c.challengeCode}\n\nפתח את האפליקציה → תחרויות → הצטרף → הזן קוד`
+    if (navigator.share) {
+      await navigator.share({ title: 'הצטרף לתחרות Smokless', text })
+    } else {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   useEffect(() => {
     if (!expanded || c.status === 'cancelled' || c.status === 'pending') return
@@ -153,11 +165,24 @@ function ChallengeCard({
             </div>
           )}
 
-          {/* Show challenge code to creator when pending */}
-          {c.status === 'pending' && isCreator && (
-            <div className="bg-amber-400/10 border border-amber-400/25 rounded-xl p-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">שתף את הקוד הזה עם החבר:</p>
-              <p className="font-mono font-black text-2xl tracking-widest text-amber-400">{c.challengeCode}</p>
+          {/* Challenge code — always visible to creator */}
+          {isCreator && c.status !== 'cancelled' && c.status !== 'completed' && (
+            <div className="bg-amber-400/8 border border-amber-400/20 rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-2">קוד תחרות לשיתוף</p>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono font-black text-xl tracking-widest text-amber-400">
+                  {c.challengeCode}
+                </span>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-1.5 bg-amber-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+                >
+                  {copied
+                    ? <><CheckCheck size={13} /> הועתק</>
+                    : <><Share2 size={13} /> שתף</>
+                  }
+                </button>
+              </div>
             </div>
           )}
 
