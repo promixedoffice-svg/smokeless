@@ -58,12 +58,14 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
 
   // Build sorted leaderboard
   const scores = c.scores ?? {}
+  const todayScores = c.todayScores ?? {}
   const participants = c.participants ?? {}
   const leaderboard = Object.entries(scores)
     .map(([uid, total]) => ({
       uid,
       name: uid === c.creatorId ? c.creatorName : (participants[uid]?.displayName ?? uid),
       total,
+      today: todayScores[uid] ?? 0,
       isMe: uid === userId,
     }))
     .sort((a, b) => a.total - b.total) // fewer cigs = better
@@ -123,9 +125,17 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
                       {p.name.split(' ')[0]}{p.isMe ? ' (אתה)' : ''}
                     </span>
                   </div>
-                  <span className={cn('text-xl font-black', i === 0 ? 'text-emerald-400' : 'text-foreground')}>
-                    {p.total}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground leading-none mb-0.5">היום</div>
+                      <div className="text-lg font-black text-amber-400">{p.today}</div>
+                    </div>
+                    <div className="w-px h-6 bg-border" />
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground leading-none mb-0.5">סה״כ</div>
+                      <div className={cn('text-lg font-black', i === 0 ? 'text-emerald-400' : 'text-foreground')}>{p.total}</div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

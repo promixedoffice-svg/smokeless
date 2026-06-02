@@ -298,6 +298,9 @@ export async function updateChallengeScores(userId: string): Promise<void> {
     )
   )
   const today = todayDate()
+  const todaySnap = await getDocs(query(collection(db, 'logs'), where('userId', '==', userId), where('date', '==', today)))
+  const todayCount = todaySnap.size
+
   for (const challengeDoc of snap.docs) {
     const c = challengeDoc.data() as Challenge
     const days: string[] = []
@@ -314,6 +317,9 @@ export async function updateChallengeScores(userId: string): Promise<void> {
       const ls = await getDocs(query(collection(db, 'logs'), where('userId', '==', userId), where('date', 'in', batch)))
       myTotal += ls.size
     }
-    await updateDoc(challengeDoc.ref, { [`scores.${userId}`]: myTotal })
+    await updateDoc(challengeDoc.ref, {
+      [`scores.${userId}`]: myTotal,
+      [`todayScores.${userId}`]: todayCount,
+    })
   }
 }

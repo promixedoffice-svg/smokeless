@@ -54,6 +54,7 @@ export interface Challenge {
   participants: Record<string, ChallengeParticipant>
   pendingRequests: Record<string, ChallengeParticipant>
   scores: Record<string, number>
+  todayScores: Record<string, number>
   startDate: string
   endDate: string
   status: 'pending' | 'active' | 'cancelled' | 'completed'
