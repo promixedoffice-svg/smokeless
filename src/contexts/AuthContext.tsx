@@ -38,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         streak: 0,
       }
       await saveUserProfile(p)
+      // Notify admin via Telegram (silent — never blocks login)
+      fetch('/api/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `🆕 <b>משתמש חדש ב-Smokeless!</b>\n👤 ${p.displayName}\n📧 ${p.email}\n📅 ${new Date().toLocaleString('he-IL')}`,
+        }),
+      }).catch(() => {})
     }
     setProfile(p)
   }
