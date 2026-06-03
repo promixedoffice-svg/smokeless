@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
-import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 
 const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
 
@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const adminDb = getAdminDb()
+    const adminAuth = getAdminAuth()
     // Delete all user logs in batches
     const logsSnap = await adminDb.collection('logs').where('userId', '==', targetUid).get()
     for (let i = 0; i < logsSnap.docs.length; i += 400) {

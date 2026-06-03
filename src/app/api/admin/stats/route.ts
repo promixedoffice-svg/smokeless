@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase-admin'
+import { getAdminDb } from '@/lib/firebase-admin'
 
 const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
 
@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
+  const adminDb = getAdminDb()
   const [usersSnap, challengesSnap] = await Promise.all([
     adminDb.collection('users').get(),
     adminDb.collection('challenges').get(),
