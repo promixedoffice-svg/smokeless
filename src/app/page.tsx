@@ -15,10 +15,12 @@ import { cn } from '@/lib/utils'
 import { Undo2, Trophy } from 'lucide-react'
 import { subscribeToMyChallenges, updateChallengeScores } from '@/lib/firestore'
 import { Challenge } from '@/types'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function HomePage() {
   const { user, profile, loading } = useAuth()
   const { count, log, undo } = useLogs(user?.uid)
+  const { t, dir, lang } = useLanguage()
   const [showGoalSetup, setShowGoalSetup] = useState(false)
   const [tapped, setTapped] = useState(false)
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
@@ -57,14 +59,25 @@ export default function HomePage() {
 
   if (!user) return <LoginScreen />
 
+  const remainingText = lang === 'he'
+    ? (remaining === 1 ? t('home_one_left') : `עוד ${remaining} סיגריות ליעד`)
+    : (remaining === 1 ? t('home_one_left') : `${remaining} cigarettes left to goal`)
+
+  const overText = lang === 'he'
+    ? `עברת את היעד ב-${count - dailyGoal} סיגריות`
+    : `${count - dailyGoal} cigarettes over goal`
+
+  const overLimitShort = lang === 'he' ? `עברת ב-${count - dailyGoal}` : `${count - dailyGoal} over`
+  const remainingShort = lang === 'he' ? `נשארו ${remaining}` : `${remaining} left`
+
   return (
-    <div className="min-h-screen bg-background pb-28 flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-background pb-28 flex flex-col" dir={dir}>
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-14 pb-2">
         <div>
-          <p className="text-muted-foreground text-sm">שלום, {profile?.displayName?.split(' ')[0]}</p>
-          <h1 className="text-xl font-bold">היום</h1>
+          <p className="text-muted-foreground text-sm">{t('home_hello')} {profile?.displayName?.split(' ')[0]}</p>
+          <h1 className="text-xl font-bold">{t('home_today')}</h1>
         </div>
         <LogoutMenu onEditGoals={() => setShowGoalSetup(true)} />
       </div>
@@ -85,7 +98,7 @@ export default function HomePage() {
             )}>
               {count}
             </div>
-            <div className="text-muted-foreground text-xs mt-1">מתוך {dailyGoal}</div>
+            <div className="text-muted-foreground text-xs mt-1">{t('home_of')} {dailyGoal}</div>
           </div>
         </div>
 
@@ -93,15 +106,13 @@ export default function HomePage() {
         <div className="w-full max-w-[280px] mt-4">
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className={cn(
-                'h-full rounded-full transition-all duration-500',
-                overLimit ? 'bg-red-500' : count >= dailyGoal * 0.8 ? 'bg-amber-400' : 'bg-emerald-500'
-              )}
+              className={cn('h-full rounded-full transition-all duration-500',
+                overLimit ? 'bg-red-500' : count >= dailyGoal * 0.8 ? 'bg-amber-400' : 'bg-emerald-500')}
               style={{ width: `${progress}%` }}
             />
           </div>
           <div className="flex justify-between mt-1.5 text-xs text-muted-foreground">
-            <span>{overLimit ? `עברת ב-${count - dailyGoal}` : `נשארו ${remaining}`}</span>
+            <span>{overLimit ? overLimitShort : remainingShort}</span>
             <span>{Math.round(progress)}%</span>
           </div>
         </div>
@@ -109,14 +120,12 @@ export default function HomePage() {
 
       {/* Status Message */}
       <div className="text-center px-5 mt-3 mb-5 min-h-[24px]">
-        {count === 0 && <p className="text-emerald-400 font-medium text-sm">מצוין! עוד לא עישנת היום 🌟</p>}
+        {count === 0 && <p className="text-emerald-400 font-medium text-sm">{t('home_no_smokes')}</p>}
         {count > 0 && !overLimit && count < dailyGoal && (
-          <p className="text-muted-foreground text-sm">
-            {remaining === 1 ? 'סיגריה אחת נשארה ליעד' : `עוד ${remaining} סיגריות ליעד`}
-          </p>
+          <p className="text-muted-foreground text-sm">{remainingText}</p>
         )}
-        {count === dailyGoal && <p className="text-amber-400 font-medium text-sm">הגעת ליעד – עצור כאן! 💪</p>}
-        {overLimit && <p className="text-red-400 font-medium text-sm">עברת את היעד ב-{count - dailyGoal} סיגריות</p>}
+        {count === dailyGoal && <p className="text-amber-400 font-medium text-sm">{t('home_goal_reached')}</p>}
+        {overLimit && <p className="text-red-400 font-medium text-sm">{overText}</p>}
       </div>
 
       {/* BIG LOG BUTTON */}
@@ -127,12 +136,10 @@ export default function HomePage() {
             'w-full max-w-sm h-20 rounded-3xl font-black text-xl text-black',
             'transition-all duration-150 shadow-lg select-none active:scale-95',
             tapped ? 'scale-95 brightness-90' : 'scale-100',
-            overLimit
-              ? 'bg-red-500 shadow-red-500/25'
-              : 'bg-amber-400 shadow-amber-400/25'
+            overLimit ? 'bg-red-500 shadow-red-500/25' : 'bg-amber-400 shadow-amber-400/25'
           )}
         >
-          🚬 + סיגריה
+          {t('home_add')}
         </button>
 
         <button
@@ -140,38 +147,38 @@ export default function HomePage() {
           className="flex items-center gap-2 text-muted-foreground active:text-foreground text-sm py-2 px-4"
         >
           <Undo2 size={15} />
-          בטל דיווח אחרון
+          {t('home_undo')}
         </button>
       </div>
 
       {/* Cost Incentive Card */}
       <div className={cn(
         'mx-5 mt-5 rounded-2xl p-4 border',
-        count === 0
-          ? 'bg-emerald-500/8 border-emerald-500/25'
-          : overLimit
-          ? 'bg-red-500/8 border-red-500/25'
+        count === 0 ? 'bg-emerald-500/8 border-emerald-500/25'
+          : overLimit ? 'bg-red-500/8 border-red-500/25'
           : 'bg-emerald-500/8 border-emerald-500/25'
       )}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground mb-1">עלות מול יעד היום</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('home_cost_vs_goal')}</p>
             {overLimit ? (
               <>
-                <p className="text-xl font-black text-red-400">
-                  +₪{Math.abs(costDiff).toFixed(1)} מעל
-                </p>
+                <p className="text-xl font-black text-red-400">+₪{Math.abs(costDiff).toFixed(1)} {lang === 'he' ? 'מעל' : 'over'}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {count - dailyGoal} סיגריות מעל היעד
+                  {lang === 'he' ? `${count - dailyGoal} סיגריות מעל היעד` : `${count - dailyGoal} cigarettes over goal`}
                 </p>
               </>
             ) : (
               <>
                 <p className="text-xl font-black text-emerald-400">
-                  {count === 0 ? `חיסכון אפשרי ₪${goalSpendToday.toFixed(1)}` : `חסכת ₪${costDiff.toFixed(1)}`}
+                  {count === 0
+                    ? `${lang === 'he' ? 'חיסכון אפשרי' : 'Possible saving'} ₪${goalSpendToday.toFixed(1)}`
+                    : `${lang === 'he' ? 'חסכת' : 'Saved'} ₪${costDiff.toFixed(1)}`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {count === 0 ? 'אם לא תעשן היום בכלל' : `${dailyGoal - count} פחות מהיעד`}
+                  {count === 0
+                    ? (lang === 'he' ? 'אם לא תעשן היום בכלל' : "If you don't smoke today")
+                    : (lang === 'he' ? `${dailyGoal - count} פחות מהיעד` : `${dailyGoal - count} less than goal`)}
                 </p>
               </>
             )}
@@ -186,13 +193,13 @@ export default function HomePage() {
       <div className="grid grid-cols-2 gap-3 px-5 mt-4">
         <div className="bg-card rounded-2xl p-4 text-center">
           <div className="text-2xl font-bold text-amber-400">₪{spentToday.toFixed(1)}</div>
-          <div className="text-xs text-muted-foreground mt-1">הוצאת היום</div>
+          <div className="text-xs text-muted-foreground mt-1">{t('home_today_spend')}</div>
         </div>
         <div className="bg-card rounded-2xl p-4 text-center">
           <div className={cn('text-2xl font-bold', (profile?.streak ?? 0) > 0 ? 'text-emerald-400' : 'text-muted-foreground')}>
             {profile?.streak ?? 0} 🔥
           </div>
-          <div className="text-xs text-muted-foreground mt-1">ימי רצף</div>
+          <div className="text-xs text-muted-foreground mt-1">{t('home_streak')}</div>
         </div>
       </div>
 
@@ -200,26 +207,26 @@ export default function HomePage() {
       {activeChallenges.length > 0 && (
         <div className="px-5 mt-4">
           <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide flex items-center gap-1.5">
-            <Trophy size={12} className="text-amber-400" /> תחרויות פעילות
+            <Trophy size={12} className="text-amber-400" /> {t('home_active_challenges')}
           </p>
           <div className="space-y-2">
             {activeChallenges.map((c) => {
               const scores = c.scores ?? {}
               const myScore = scores[user!.uid] ?? 0
-              const sorted = Object.entries(scores).sort(([,a],[,b]) => a - b)
+              const sorted = Object.entries(scores).sort(([, a], [, b]) => a - b)
               const myRank = sorted.findIndex(([uid]) => uid === user!.uid)
               return (
                 <div key={c.id} className="bg-card rounded-2xl p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{myRank === 0 ? '🥇' : myRank === 1 ? '🥈' : '🥉'}</span>
                     <div>
-                      <p className="text-xs font-semibold">{c.creatorName.split(' ')[0]}'s group</p>
-                      <p className="text-xs text-muted-foreground">{sorted.length} משתתפים</p>
+                      <p className="text-xs font-semibold">{c.creatorName.split(' ')[0]}'s {t('home_active_challenges').split(' ')[0]}</p>
+                      <p className="text-xs text-muted-foreground">{sorted.length} {t('home_participants')}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <span className={cn('text-2xl font-black', myRank === 0 ? 'text-emerald-400' : 'text-foreground')}>{myScore}</span>
-                    <p className="text-xs text-muted-foreground">הסיגריות שלי</p>
+                    <p className="text-xs text-muted-foreground">{t('home_my_cigs')}</p>
                   </div>
                 </div>
               )

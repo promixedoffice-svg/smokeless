@@ -17,6 +17,7 @@ import { Challenge, ChallengeMessage, ChallengeParticipant } from '@/types'
 import { Trophy, Plus, Link2, X, Check, Trash2, Ban, ChevronDown, ChevronUp, Send, Share2, CheckCheck, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { playMessageSound, showNotification } from '@/lib/sound'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const EMOJI_REACTIONS = ['💪', '😤', '🔥', '😂', '🏃', '🚬', '👑', '💸']
 const PLACE_EMOJIS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
@@ -24,6 +25,7 @@ const PLACE_EMOJIS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '
 function ChallengeCard({ c, userId, userName, onRefresh }: {
   c: Challenge; userId: string; userName: string; onRefresh: () => void
 }) {
+  const { t } = useLanguage()
   const isCreator = c.creatorId === userId
   const isMember = (c.participantIds ?? []).includes(userId)
   const isPending = (c.pendingRequestIds ?? []).includes(userId)
@@ -46,7 +48,7 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
         const latest = newMsgs[newMsgs.length - 1]
         if (latest && latest.userId !== userId) {
           playMessageSound()
-          showNotification('הודעה חדשה בתחרות', `${latest.userName.split(' ')[0]}: ${latest.content}`)
+          showNotification(t('friends_messages'), `${latest.userName.split(' ')[0]}: ${latest.content}`)
         }
       }
       isInitialMsg.current = false
@@ -54,9 +56,8 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
       setMessages(newMsgs)
     })
     return unsub
-  }, [c.id, c.status, userId])
+  }, [c.id, c.status, userId, t])
 
-  // Build sorted leaderboard
   const scores = c.scores ?? {}
   const todayScores = c.todayScores ?? {}
   const participants = c.participants ?? {}
@@ -68,16 +69,19 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
       today: todayScores[uid] ?? 0,
       isMe: uid === userId,
     }))
-    .sort((a, b) => a.total - b.total) // fewer cigs = better
+    .sort((a, b) => a.total - b.total)
 
   const pendingList = (Object.values(c.pendingRequests ?? {}) as (ChallengeParticipant | null)[]).filter(Boolean) as ChallengeParticipant[]
 
-  const statusLabel = c.status === 'active' ? 'פעיל' : c.status === 'pending' ? 'ממתין' : c.status === 'cancelled' ? 'בוטל' : 'הסתיים'
+  const statusLabel = c.status === 'active' ? t('friends_status_active')
+    : c.status === 'pending' ? t('friends_status_pending')
+    : c.status === 'cancelled' ? t('friends_status_cancelled')
+    : t('friends_status_completed')
   const statusColor = c.status === 'active' ? 'text-emerald-400' : c.status === 'pending' ? 'text-amber-400' : 'text-muted-foreground'
 
   async function handleShare() {
-    const text = `הצטרף לתחרות שלי ב-Smokless!\nקוד: ${c.challengeCode}\n\nפתח אפליקציה → תחרויות → הצטרף → הזן קוד`
-    if (navigator.share) await navigator.share({ title: 'תחרות Smokless', text })
+    const text = `Join my Smokless challenge!\nCode: ${c.challengeCode}\n\nOpen app → Friends → Join → Enter code`
+    if (navigator.share) await navigator.share({ title: 'Smokless Challenge', text })
     else { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }
   }
 
@@ -98,11 +102,11 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
         <div className="flex items-center gap-2">
           <span className={cn('text-xs font-semibold', statusColor)}>● {statusLabel}</span>
           <span className="text-xs text-muted-foreground">·</span>
-          <span className="text-xs text-muted-foreground">{c.type === 'weekly' ? 'שבועי' : 'חודשי'}</span>
-          <span className="text-xs text-muted-foreground">· {(c.participantIds ?? []).filter(id => id !== c.creatorId).length}/{c.maxParticipants} חברים</span>
+          <span className="text-xs text-muted-foreground">{c.type === 'weekly' ? t('friends_weekly') : t('friends_monthly')}</span>
+          <span className="text-xs text-muted-foreground">· {(c.participantIds ?? []).filter(id => id !== c.creatorId).length}/{c.maxParticipants} {t('friends_friends_count')}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{c.creatorName.split(' ')[0]}'s group</span>
+          <span className="text-sm font-semibold">{c.creatorName.split(' ')[0]}'s {t('friends_create').toLowerCase()}</span>
           {expanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
         </div>
       </button>
@@ -113,7 +117,7 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
           {/* Leaderboard */}
           {c.status === 'active' && leaderboard.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium">טבלת דירוג</p>
+              <p className="text-xs text-muted-foreground font-medium">{t('friends_leaderboard')}</p>
               {leaderboard.map((p, i) => (
                 <div key={p.uid} className={cn(
                   'flex items-center justify-between rounded-xl px-3 py-2.5',
@@ -122,17 +126,17 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
                   <div className="flex items-center gap-2.5">
                     <span className="text-xl">{PLACE_EMOJIS[i]}</span>
                     <span className={cn('text-sm font-semibold', p.isMe ? 'text-amber-400' : 'text-foreground')}>
-                      {p.name.split(' ')[0]}{p.isMe ? ' (אתה)' : ''}
+                      {p.name.split(' ')[0]}{p.isMe ? ` (${t('friends_you')})` : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-center">
-                      <div className="text-xs text-muted-foreground leading-none mb-0.5">היום</div>
+                      <div className="text-xs text-muted-foreground leading-none mb-0.5">{t('friends_col_today')}</div>
                       <div className="text-lg font-black text-amber-400">{p.today}</div>
                     </div>
                     <div className="w-px h-6 bg-border" />
                     <div className="text-center">
-                      <div className="text-xs text-muted-foreground leading-none mb-0.5">סה״כ</div>
+                      <div className="text-xs text-muted-foreground leading-none mb-0.5">{t('friends_col_total')}</div>
                       <div className={cn('text-lg font-black', i === 0 ? 'text-emerald-400' : 'text-foreground')}>{p.total}</div>
                     </div>
                   </div>
@@ -144,28 +148,28 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
           {/* Cancelled message */}
           {c.status === 'cancelled' && c.cancellationMessage && (
             <div className="bg-red-500/10 border border-red-500/25 rounded-xl p-3">
-              <p className="text-xs text-red-400 font-semibold mb-1">הודעת ביטול:</p>
+              <p className="text-xs text-red-400 font-semibold mb-1">{t('friends_cancel_label')}</p>
               <p className="text-sm">{c.cancellationMessage}</p>
             </div>
           )}
 
-          {/* Challenge code + share (creator only, while pending/active) */}
+          {/* Challenge code + share (creator only) */}
           {isCreator && c.status !== 'cancelled' && c.status !== 'completed' && (
             <div className="bg-amber-400/8 border border-amber-400/20 rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1.5">קוד תחרות — שתף עם חברים</p>
+              <p className="text-xs text-muted-foreground mb-1.5">{t('friends_challenge_code')}</p>
               <div className="flex items-center justify-between">
                 <span className="font-mono font-black text-xl tracking-widest text-amber-400">{c.challengeCode}</span>
                 <button onClick={handleShare} className="flex items-center gap-1.5 bg-amber-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all">
-                  {copied ? <><CheckCheck size={12} /> הועתק</> : <><Share2 size={12} /> שתף</>}
+                  {copied ? <><CheckCheck size={12} /> {t('friends_copied')}</> : <><Share2 size={12} /> {t('friends_share')}</>}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Pending requests — creator approves/rejects each */}
+          {/* Pending requests */}
           {isCreator && pendingList.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium">בקשות הצטרפות</p>
+              <p className="text-xs text-muted-foreground font-medium">{t('friends_join_requests')}</p>
               {pendingList.map((req) => (
                 <div key={req.uid} className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-3 flex items-center justify-between">
                   <span className="text-sm font-semibold">{req.displayName}</span>
@@ -187,31 +191,28 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
           {/* Waiting for approval */}
           {isPending && !isMember && (
             <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-3 text-center">
-              <p className="text-sm text-blue-400">⏳ מחכה לאישור מהיוצר</p>
+              <p className="text-sm text-blue-400">{t('friends_waiting_approval')}</p>
             </div>
           )}
 
-          {/* Start challenge button (creator, when enough players) */}
+          {/* Start challenge button */}
           {isCreator && c.status === 'pending' && (c.participantIds ?? []).length >= 2 && (
-            <button
-              onClick={async () => { await startChallenge(c.id); onRefresh() }}
-              className="w-full h-10 rounded-xl bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
-            >
-              <Play size={14} /> התחל תחרות
+            <button onClick={async () => { await startChallenge(c.id); onRefresh() }}
+              className="w-full h-10 rounded-xl bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
+              <Play size={14} /> {t('friends_start')}
             </button>
           )}
 
           {/* Messages */}
           {(c.status === 'active' || c.status === 'pending') && isMember && (
             <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">הודעות קבוצה</p>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">{t('friends_messages')}</p>
               {messages.length > 0 && (
                 <div className="space-y-1.5 mb-3 max-h-36 overflow-y-auto">
                   {messages.map((m) => (
                     <div key={m.id} className={cn('flex gap-2', m.userId === userId ? 'flex-row-reverse' : 'flex-row')}>
                       <div className={cn('max-w-[75%] rounded-2xl px-3 py-1.5 text-sm',
-                        m.userId === userId ? 'bg-amber-400/20' : 'bg-muted'
-                      )}>
+                        m.userId === userId ? 'bg-amber-400/20' : 'bg-muted')}>
                         {m.userId !== userId && <span className="text-xs text-muted-foreground block">{m.userName.split(' ')[0]}</span>}
                         {m.content}
                       </div>
@@ -227,7 +228,7 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
               <div className="flex gap-2">
                 <input value={msgInput} onChange={(e) => setMsgInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(msgInput)}
-                  placeholder="כתוב הודעה..." maxLength={100}
+                  placeholder={t('friends_msg_placeholder')} maxLength={100}
                   className="flex-1 bg-muted rounded-xl px-3 py-2 text-sm focus:outline-none" />
                 <button onClick={() => handleSendMessage(msgInput)} disabled={!msgInput.trim() || sending}
                   className="w-9 h-9 bg-amber-400 text-black rounded-xl flex items-center justify-center disabled:opacity-40 active:scale-95">
@@ -239,54 +240,49 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
 
           {/* Actions */}
           <div className="border-t border-border pt-3 space-y-2">
-            {/* Leave (non-creator member) */}
             {!isCreator && isMember && c.status === 'active' && (
               <button onClick={async () => { await leaveChallenge(c.id, userId); onRefresh() }}
                 className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95 transition-all">
-                <X size={13} /> עזוב תחרות
+                <X size={13} /> {t('friends_leave')}
               </button>
             )}
 
-            {/* Remove participants (creator) */}
             {isCreator && c.status === 'active' && Object.keys(participants).filter(u => u !== userId).map(uid => (
               <button key={uid} onClick={async () => { await removeParticipantFromGroup(c.id, uid); onRefresh() }}
                 className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95">
-                <X size={13} /> הסר את {participants[uid]?.displayName?.split(' ')[0]}
+                <X size={13} /> {t('friends_remove_prefix')} {participants[uid]?.displayName?.split(' ')[0]}
               </button>
             ))}
 
-            {/* Cancel with message (creator) */}
             {isCreator && (c.status === 'pending' || c.status === 'active') && (
               !showCancel ? (
                 <button onClick={() => setShowCancel(true)}
                   className="w-full h-9 rounded-xl border border-amber-500/40 text-amber-400 text-xs flex items-center justify-center gap-1.5 active:scale-95">
-                  <Ban size={13} /> בטל תחרות עם הודעה
+                  <Ban size={13} /> {t('friends_cancel_with_msg')}
                 </button>
               ) : (
                 <div className="space-y-2">
                   <input value={cancelMsg} onChange={(e) => setCancelMsg(e.target.value)}
-                    placeholder="הודעת ביטול (אופציונלי)"
+                    placeholder={t('friends_cancel_placeholder')}
                     className="w-full bg-muted rounded-xl px-3 py-2 text-sm focus:outline-none" />
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => setShowCancel(false)} className="h-9 rounded-xl bg-muted text-xs active:scale-95">ביטול</button>
+                    <button onClick={() => setShowCancel(false)} className="h-9 rounded-xl bg-muted text-xs active:scale-95">{t('friends_cancel_abort')}</button>
                     <button onClick={async () => { await cancelChallenge(c.id, cancelMsg); setShowCancel(false); onRefresh() }}
-                      className="h-9 rounded-xl bg-amber-400 text-black text-xs font-semibold active:scale-95">אשר</button>
+                      className="h-9 rounded-xl bg-amber-400 text-black text-xs font-semibold active:scale-95">{t('friends_cancel_confirm')}</button>
                   </div>
                 </div>
               )
             )}
 
-            {/* Hide from my list */}
             <button onClick={async () => { await softDeleteChallenge(c.id, userId); onRefresh() }}
               className="w-full h-9 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 active:scale-95">
-              <Trash2 size={13} /> הסתר מהרשימה שלי
+              <Trash2 size={13} /> {t('friends_hide')}
             </button>
 
-            {/* Hard delete (creator only) */}
             {isCreator && (
               <button onClick={async () => { await hardDeleteChallenge(c.id); onRefresh() }}
                 className="w-full h-9 rounded-xl border border-red-500/40 text-red-400 text-xs flex items-center justify-center gap-1.5 active:scale-95">
-                <Trash2 size={13} /> מחק לכולם לגמרי
+                <Trash2 size={13} /> {t('friends_delete_all')}
               </button>
             )}
           </div>
@@ -298,6 +294,7 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
 
 export default function FriendsPage() {
   const { user, profile, loading } = useAuth()
+  const { t, dir } = useLanguage()
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [showJoin, setShowJoin] = useState(false)
@@ -336,25 +333,25 @@ export default function FriendsPage() {
     setJoinError('')
     try {
       const challenge = await getChallengeByCode(joinCode.trim())
-      if (!challenge) { setJoinError('קוד תחרות לא נמצא.'); setJoinLoading(false); return }
+      if (!challenge) { setJoinError(t('friends_err_not_found')); setJoinLoading(false); return }
       if (challenge.creatorId === user!.uid || (challenge.participantIds ?? []).includes(user!.uid)) {
-        setJoinError('אתה כבר בתחרות הזו'); setJoinLoading(false); return
+        setJoinError(t('friends_err_already_in')); setJoinLoading(false); return
       }
       if ((challenge.pendingRequestIds ?? []).includes(user!.uid)) {
-        setJoinError('כבר שלחת בקשה — ממתין לאישור'); setJoinLoading(false); return
+        setJoinError(t('friends_err_already_pending')); setJoinLoading(false); return
       }
       if (challenge.status === 'cancelled' || challenge.status === 'completed') {
-        setJoinError('התחרות הזו כבר לא פעילה'); setJoinLoading(false); return
+        setJoinError(t('friends_err_not_active')); setJoinLoading(false); return
       }
       const nonCreatorCount = (challenge.participantIds ?? []).filter(id => id !== challenge.creatorId).length
       if (nonCreatorCount >= challenge.maxParticipants) {
-        setJoinError('התחרות מלאה — אין מקום למשתתפים נוספים'); setJoinLoading(false); return
+        setJoinError(t('friends_err_full')); setJoinLoading(false); return
       }
       await requestJoinChallenge(challenge.id, profile)
       setJoinSuccess(true)
       setJoinCode('')
       setTimeout(() => { setShowJoin(false); setJoinSuccess(false); refresh() }, 2000)
-    } catch (e: unknown) { setJoinError(`שגיאה: ${e instanceof Error ? e.message : String(e)}`) }
+    } catch (e: unknown) { setJoinError(`Error: ${e instanceof Error ? e.message : String(e)}`) }
     finally { setJoinLoading(false) }
   }
 
@@ -363,20 +360,20 @@ export default function FriendsPage() {
   const done = challenges.filter(c => c.status === 'cancelled' || c.status === 'completed')
 
   return (
-    <div className="min-h-screen bg-background pb-28" dir="rtl">
+    <div className="min-h-screen bg-background pb-28" dir={dir}>
       <div className="px-5 pt-14 pb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">תחרויות</h1>
-          <p className="text-muted-foreground text-sm">מי מעשן פחות?</p>
+          <h1 className="text-2xl font-bold">{t('friends_title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('friends_subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setShowJoin(true); setJoinLoading(false); setJoinError(''); setJoinCode(''); setJoinSuccess(false) }}
             className="h-9 px-3 rounded-xl border border-border text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all">
-            <Link2 size={14} /> הצטרף
+            <Link2 size={14} /> {t('friends_join')}
           </button>
           <button onClick={() => setShowCreate(true)}
             className="h-9 px-3 rounded-xl bg-amber-400 text-black text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all">
-            <Plus size={14} /> צור
+            <Plus size={14} /> {t('friends_create')}
           </button>
         </div>
       </div>
@@ -384,42 +381,42 @@ export default function FriendsPage() {
       {challenges.length === 0 ? (
         <div className="flex flex-col items-center justify-center mt-12 px-6 text-center">
           <div className="text-5xl mb-4">🥊</div>
-          <h2 className="text-lg font-semibold mb-2">אין תחרויות עדיין</h2>
-          <p className="text-muted-foreground text-sm mb-6">צור תחרות קבוצתית ושתף את הקוד עם חברים</p>
+          <h2 className="text-lg font-semibold mb-2">{t('friends_empty_title')}</h2>
+          <p className="text-muted-foreground text-sm mb-6">{t('friends_empty_desc')}</p>
           <button onClick={() => setShowCreate(true)}
             className="h-12 px-8 rounded-2xl bg-amber-400 text-black font-bold active:scale-95 transition-all">
-            צור תחרות
+            {t('friends_create_btn')}
           </button>
         </div>
       ) : (
         <div className="px-5">
-          {active.length > 0 && <><p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">פעילות</p>{active.map(c => <ChallengeCard key={c.id} c={c} userId={user.uid} userName={profile.displayName} onRefresh={refresh} />)}</>}
-          {pending.length > 0 && <><p className="text-xs text-muted-foreground mb-2 mt-4 font-medium uppercase tracking-wide">ממתינות</p>{pending.map(c => <ChallengeCard key={c.id} c={c} userId={user.uid} userName={profile.displayName} onRefresh={refresh} />)}</>}
-          {done.length > 0 && <><p className="text-xs text-muted-foreground mb-2 mt-4 font-medium uppercase tracking-wide">הסתיימו</p>{done.map(c => <ChallengeCard key={c.id} c={c} userId={user.uid} userName={profile.displayName} onRefresh={refresh} />)}</>}
+          {active.length > 0 && <><p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">{t('friends_section_active')}</p>{active.map(c => <ChallengeCard key={c.id} c={c} userId={user.uid} userName={profile.displayName} onRefresh={refresh} />)}</>}
+          {pending.length > 0 && <><p className="text-xs text-muted-foreground mb-2 mt-4 font-medium uppercase tracking-wide">{t('friends_section_pending')}</p>{pending.map(c => <ChallengeCard key={c.id} c={c} userId={user.uid} userName={profile.displayName} onRefresh={refresh} />)}</>}
+          {done.length > 0 && <><p className="text-xs text-muted-foreground mb-2 mt-4 font-medium uppercase tracking-wide">{t('friends_section_done')}</p>{done.map(c => <ChallengeCard key={c.id} c={c} userId={user.uid} userName={profile.displayName} onRefresh={refresh} />)}</>}
         </div>
       )}
 
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4 pb-8" onClick={() => setShowCreate(false)}>
-          <div className="bg-card rounded-3xl p-6 w-full max-w-sm" dir="rtl" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-3xl p-6 w-full max-w-sm" dir={dir} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold flex items-center gap-2"><Trophy size={20} className="text-amber-400" /> צור תחרות</h2>
+              <h2 className="text-lg font-bold flex items-center gap-2"><Trophy size={20} className="text-amber-400" /> {t('friends_create_title')}</h2>
               <button onClick={() => setShowCreate(false)}><X size={20} className="text-muted-foreground" /></button>
             </div>
 
-            <p className="text-xs text-muted-foreground mb-3">סוג תחרות</p>
+            <p className="text-xs text-muted-foreground mb-3">{t('friends_create_type')}</p>
             <div className="grid grid-cols-2 gap-2 mb-5">
-              {(['weekly', 'monthly'] as const).map(t => (
-                <button key={t} onClick={() => setCreateType(t)}
+              {(['weekly', 'monthly'] as const).map(tp => (
+                <button key={tp} onClick={() => setCreateType(tp)}
                   className={cn('h-10 rounded-xl text-sm font-semibold border transition-all active:scale-95',
-                    createType === t ? 'border-amber-400 bg-amber-400/10 text-amber-400' : 'border-border text-foreground')}>
-                  {t === 'weekly' ? '🗓 שבועי' : '📅 חודשי'}
+                    createType === tp ? 'border-amber-400 bg-amber-400/10 text-amber-400' : 'border-border text-foreground')}>
+                  {tp === 'weekly' ? `🗓 ${t('friends_weekly')}` : `📅 ${t('friends_monthly')}`}
                 </button>
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground mb-3">כמה חברים יכולים להצטרף (לא כולל אתה)</p>
+            <p className="text-xs text-muted-foreground mb-3">{t('friends_create_max')}</p>
             <div className="flex gap-2 flex-wrap mb-5">
               {[2, 3, 4, 5, 8, 10].map(n => (
                 <button key={n} onClick={() => setMaxParticipants(n)}
@@ -430,13 +427,11 @@ export default function FriendsPage() {
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground mb-4">
-              לאחר היצירה תקבל קוד ייחודי לשיתוף. כל משתתף שישלח בקשה — אתה תאשר.
-            </p>
+            <p className="text-xs text-muted-foreground mb-4">{t('friends_create_note')}</p>
 
             <button onClick={handleCreate} disabled={createLoading}
               className="w-full h-12 rounded-2xl bg-amber-400 text-black font-bold text-sm active:scale-95 disabled:opacity-60">
-              {createLoading ? 'יוצר...' : 'צור תחרות'}
+              {createLoading ? t('friends_creating') : t('friends_create_btn')}
             </button>
           </div>
         </div>
@@ -445,27 +440,27 @@ export default function FriendsPage() {
       {/* Join Modal */}
       {showJoin && (
         <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4 pb-8" onClick={() => setShowJoin(false)}>
-          <div className="bg-card rounded-3xl p-6 w-full max-w-sm" dir="rtl" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-3xl p-6 w-full max-w-sm" dir={dir} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">הצטרף לתחרות</h2>
+              <h2 className="text-lg font-bold">{t('friends_join_title')}</h2>
               <button onClick={() => setShowJoin(false)}><X size={20} className="text-muted-foreground" /></button>
             </div>
             {joinSuccess ? (
               <div className="text-center py-6">
                 <div className="text-5xl mb-3">✅</div>
-                <p className="text-emerald-400 font-semibold">בקשה נשלחה!</p>
-                <p className="text-muted-foreground text-sm mt-1">ממתין לאישור מהיוצר</p>
+                <p className="text-emerald-400 font-semibold">{t('friends_join_success')}</p>
+                <p className="text-muted-foreground text-sm mt-1">{t('friends_join_waiting')}</p>
               </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground mb-4">הזן את קוד התחרות שקיבלת מהחבר</p>
+                <p className="text-sm text-muted-foreground mb-4">{t('friends_join_desc')}</p>
                 <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="לדוגמה: AB1C2D" maxLength={6}
+                  placeholder={t('friends_join_placeholder')} maxLength={6}
                   className="w-full border border-input bg-background rounded-xl px-4 py-3 text-center font-mono text-xl font-bold tracking-widest uppercase mb-3 focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
                 {joinError && <p className="text-red-400 text-sm text-center mb-3">{joinError}</p>}
                 <button onClick={handleJoin} disabled={joinLoading || joinCode.length < 6}
                   className="w-full h-12 rounded-2xl bg-amber-400 text-black font-bold text-sm active:scale-95 disabled:opacity-50">
-                  {joinLoading ? 'שולח...' : 'שלח בקשת הצטרפות'}
+                  {joinLoading ? t('friends_join_sending') : t('friends_join_send')}
                 </button>
               </>
             )}

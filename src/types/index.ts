@@ -7,6 +7,9 @@ export interface UserProfile {
   pricePerPack: number
   cigarettesPerPack: number
   cigaretteBrand?: string
+  age?: number
+  weight?: number
+  height?: number
   joinedAt: string
   lastMotivationDate?: string
   inviteCode: string
