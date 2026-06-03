@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 export default function GoalsPage() {
   const { user, profile, refreshProfile, loading } = useAuth()
   const { t, dir } = useLanguage()
+  const curr = profile?.currency ?? '₪'
   const [dailyGoal, setDailyGoal] = useState(profile?.dailyGoal ?? 10)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -92,15 +93,15 @@ export default function GoalsPage() {
         <h2 className="text-sm font-semibold mb-4">{t('goals_cost_title')}</h2>
         <div className="grid grid-cols-3 gap-3 text-center">
           <div className="bg-background rounded-xl p-3">
-            <div className="text-xl font-bold text-rose-400">₪{dailyCost}</div>
+            <div className="text-xl font-bold text-rose-400">{curr}{dailyCost}</div>
             <div className="text-xs text-muted-foreground mt-1">{t('goals_day')}</div>
           </div>
           <div className="bg-background rounded-xl p-3">
-            <div className="text-xl font-bold text-rose-400">₪{weeklyCost}</div>
+            <div className="text-xl font-bold text-rose-400">{curr}{weeklyCost}</div>
             <div className="text-xs text-muted-foreground mt-1">{t('goals_week')}</div>
           </div>
           <div className="bg-background rounded-xl p-3">
-            <div className="text-xl font-bold text-rose-400">₪{monthlyCost}</div>
+            <div className="text-xl font-bold text-rose-400">{curr}{monthlyCost}</div>
             <div className="text-xs text-muted-foreground mt-1">{t('goals_month')}</div>
           </div>
         </div>

@@ -19,6 +19,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 export default function DashboardPage() {
   const { user, profile, loading } = useAuth()
   const { t, dir, lang } = useLanguage()
+  const curr = profile?.currency ?? '₪'
   const [weekStats, setWeekStats] = useState<DayStats[]>([])
   const [monthTotal, setMonthTotal] = useState(0)
   const [loadingData, setLoadingData] = useState(true)
@@ -97,7 +98,7 @@ export default function DashboardPage() {
           <div className="text-xs text-muted-foreground mt-1">{t('dash_avg')}</div>
         </div>
         <div className="bg-card rounded-2xl p-4">
-          <div className="text-3xl font-black text-rose-400">₪{monthActualCost.toFixed(0)}</div>
+          <div className="text-3xl font-black text-rose-400">{curr}{monthActualCost.toFixed(0)}</div>
           <div className="text-xs text-muted-foreground mt-1">{t('dash_monthly_spend')}</div>
         </div>
       </div>
@@ -117,12 +118,12 @@ export default function DashboardPage() {
                   : <TrendingUp size={16} className="text-red-400 mb-0.5" />}
                 <p className={cn('text-xl font-black', weekSaved ? 'text-emerald-400' : 'text-red-400')}>
                   {weekSaved
-                    ? `${lang === 'he' ? 'חסכת' : 'Saved'} ₪${weekCostDiff.toFixed(0)}`
-                    : `${lang === 'he' ? 'הוצאת' : 'Spent'} ₪${Math.abs(weekCostDiff).toFixed(0)} ${lang === 'he' ? 'יותר' : 'more'}`}
+                    ? `${lang === 'he' ? 'חסכת' : 'Saved'} ${curr}${weekCostDiff.toFixed(0)}`
+                    : `${lang === 'he' ? 'הוצאת' : 'Spent'} ${curr}${Math.abs(weekCostDiff).toFixed(0)} ${lang === 'he' ? 'יותר' : 'more'}`}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {t('dash_actual')} ₪{weekActualCost.toFixed(0)} · {t('dash_goal_cost')} ₪{weekGoalCost.toFixed(0)}
+                {t('dash_actual')} {curr}{weekActualCost.toFixed(0)} · {t('dash_goal_cost')} {curr}{weekGoalCost.toFixed(0)}
               </p>
             </div>
             <div className="text-3xl">{weekSaved ? '✅' : '💸'}</div>
@@ -140,12 +141,12 @@ export default function DashboardPage() {
                   : <TrendingUp size={16} className="text-red-400 mb-0.5" />}
                 <p className={cn('text-xl font-black', monthSaved ? 'text-emerald-400' : 'text-red-400')}>
                   {monthSaved
-                    ? `${lang === 'he' ? 'חסכת' : 'Saved'} ₪${monthCostDiff.toFixed(0)}`
-                    : `${lang === 'he' ? 'הוצאת' : 'Spent'} ₪${Math.abs(monthCostDiff).toFixed(0)} ${lang === 'he' ? 'יותר' : 'more'}`}
+                    ? `${lang === 'he' ? 'חסכת' : 'Saved'} ${curr}${monthCostDiff.toFixed(0)}`
+                    : `${lang === 'he' ? 'הוצאת' : 'Spent'} ${curr}${Math.abs(monthCostDiff).toFixed(0)} ${lang === 'he' ? 'יותר' : 'more'}`}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {t('dash_actual')} ₪{monthActualCost.toFixed(0)} · {t('dash_goal_cost')} ₪{monthGoalCost.toFixed(0)}
+                {t('dash_actual')} {curr}{monthActualCost.toFixed(0)} · {t('dash_goal_cost')} {curr}{monthGoalCost.toFixed(0)}
               </p>
             </div>
             <div className="text-3xl">{monthSaved ? '💰' : '📉'}</div>
