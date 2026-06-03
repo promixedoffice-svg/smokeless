@@ -12,11 +12,12 @@ import { CheckCircle2, Trash2, AlertTriangle, MessageCircle, Mail, FileText } fr
 import { cn } from '@/lib/utils'
 import { isSoundEnabled, setSoundEnabled, requestNotificationPermission } from '@/lib/sound'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { APP_VERSION, APP_VERSION_DATE, WHATSAPP_URL, SUPPORT_EMAIL, COMPANY_NAME, COMPANY_REG } from '@/lib/constants'
+import { APP_VERSION, APP_VERSION_DATE, WHATSAPP_URL, SUPPORT_EMAIL, COMPANY_NAME, COMPANY_REG, SUPPORT_PHONE, SUPPORT_PHONE_INTL } from '@/lib/constants'
 
 export default function ProfilePage() {
   const { user, profile, refreshProfile, loading } = useAuth()
   const { lang, setLang, t, dir } = useLanguage()
+  const displayPhone = lang === 'en' ? SUPPORT_PHONE_INTL : SUPPORT_PHONE
 
   const [pricePerPack, setPricePerPack] = useState(35)
   const [cigarettesPerPack, setCigarettesPerPack] = useState(20)
@@ -168,7 +169,7 @@ export default function ProfilePage() {
         </div>
         {/* Currency selector */}
         <div className="flex items-center justify-between pt-3 border-t border-border">
-          <span className="text-xs text-muted-foreground">מטבע</span>
+          <span className="text-xs text-muted-foreground">{t('profile_currency')}</span>
           <div className="flex gap-2">
             {(['₪', '$'] as const).map(c => (
               <button key={c} onClick={() => setCurrency(c)}
@@ -227,8 +228,8 @@ export default function ProfilePage() {
           {/* Reminder */}
           <div className="bg-card rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">תזכורת יומית</p>
-              <p className="text-xs text-muted-foreground mt-0.5">אתראה אם לא עדכנת שעה — בין 10:00 ל-22:00</p>
+              <p className="text-sm font-medium">{t('profile_reminder')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('profile_reminder_sub')}</p>
             </div>
             <button
               onClick={handleReminderToggle}
@@ -291,21 +292,21 @@ export default function ProfilePage() {
 
       {/* Support */}
       <div className="mx-5 mb-4">
-        <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">תמיכה ועזרה</p>
+        <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">{t('profile_support')}</p>
         <div className="bg-card rounded-2xl overflow-hidden">
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-3.5 border-b border-border active:bg-muted/30">
             <MessageCircle size={18} className="text-emerald-400" />
             <div>
               <p className="text-sm font-medium">WhatsApp</p>
-              <p className="text-xs text-muted-foreground">שלח הודעה לתמיכה</p>
+              <p className="text-xs text-muted-foreground">{displayPhone} · {t('profile_support_wa')}</p>
             </div>
           </a>
           <a href={`mailto:${SUPPORT_EMAIL}`}
             className="flex items-center gap-3 px-4 py-3.5 border-b border-border active:bg-muted/30">
             <Mail size={18} className="text-blue-400" />
             <div>
-              <p className="text-sm font-medium">דוא"ל</p>
+              <p className="text-sm font-medium">{t('profile_support_email')}</p>
               <p className="text-xs text-muted-foreground">{SUPPORT_EMAIL}</p>
             </div>
           </a>
@@ -313,8 +314,8 @@ export default function ProfilePage() {
             className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/30">
             <FileText size={18} className="text-amber-400" />
             <div>
-              <p className="text-sm font-medium">תנאי שימוש ופרטיות</p>
-              <p className="text-xs text-muted-foreground">קרא את המדיניות המלאה</p>
+              <p className="text-sm font-medium">{t('profile_terms_link')}</p>
+              <p className="text-xs text-muted-foreground">{t('profile_terms_desc')}</p>
             </div>
           </Link>
         </div>
