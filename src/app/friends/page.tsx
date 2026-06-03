@@ -18,6 +18,7 @@ import { Trophy, Plus, Link2, X, Check, Trash2, Ban, ChevronDown, ChevronUp, Sen
 import { cn } from '@/lib/utils'
 import { playMessageSound, showNotification } from '@/lib/sound'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { APP_URL } from '@/lib/constants'
 
 const EMOJI_REACTIONS = ['💪', '😤', '🔥', '😂', '🏃', '🚬', '👑', '💸']
 const PLACE_EMOJIS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
@@ -80,8 +81,8 @@ function ChallengeCard({ c, userId, userName, onRefresh }: {
   const statusColor = c.status === 'active' ? 'text-emerald-400' : c.status === 'pending' ? 'text-amber-400' : 'text-muted-foreground'
 
   async function handleShare() {
-    const text = `Join my Smokless challenge!\nCode: ${c.challengeCode}\n\nOpen app → Friends → Join → Enter code`
-    if (navigator.share) await navigator.share({ title: 'Smokless Challenge', text })
+    const text = `הצטרף לתחרות שלי ב-Smokeless!\nקוד: ${c.challengeCode}\n\n📲 ${APP_URL}\n\nפתח אפליקציה → תחרויות → הצטרף → הזן קוד`
+    if (navigator.share) await navigator.share({ title: 'תחרות Smokeless', text, url: APP_URL })
     else { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }
   }
 

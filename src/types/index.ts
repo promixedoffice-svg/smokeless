@@ -10,6 +10,9 @@ export interface UserProfile {
   age?: number
   weight?: number
   height?: number
+  currency?: '₪' | '$'
+  reminderEnabled?: boolean
+  termsAccepted?: boolean
   joinedAt: string
   lastMotivationDate?: string
   inviteCode: string

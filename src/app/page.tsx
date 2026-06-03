@@ -16,11 +16,14 @@ import { Undo2, Trophy } from 'lucide-react'
 import { subscribeToMyChallenges, updateChallengeScores } from '@/lib/firestore'
 import { Challenge } from '@/types'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useReminder } from '@/hooks/useReminder'
 
 export default function HomePage() {
   const { user, profile, loading } = useAuth()
   const { count, log, undo } = useLogs(user?.uid)
   const { t, dir, lang } = useLanguage()
+  const curr = profile?.currency ?? '₪'
+  useReminder(profile?.reminderEnabled ?? false)
   const [showGoalSetup, setShowGoalSetup] = useState(false)
   const [tapped, setTapped] = useState(false)
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
@@ -163,7 +166,7 @@ export default function HomePage() {
             <p className="text-xs text-muted-foreground mb-1">{t('home_cost_vs_goal')}</p>
             {overLimit ? (
               <>
-                <p className="text-xl font-black text-red-400">+₪{Math.abs(costDiff).toFixed(1)} {lang === 'he' ? 'מעל' : 'over'}</p>
+                <p className="text-xl font-black text-red-400">+{curr}{Math.abs(costDiff).toFixed(1)} {lang === 'he' ? 'מעל' : 'over'}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {lang === 'he' ? `${count - dailyGoal} סיגריות מעל היעד` : `${count - dailyGoal} cigarettes over goal`}
                 </p>
@@ -172,8 +175,8 @@ export default function HomePage() {
               <>
                 <p className="text-xl font-black text-emerald-400">
                   {count === 0
-                    ? `${lang === 'he' ? 'חיסכון אפשרי' : 'Possible saving'} ₪${goalSpendToday.toFixed(1)}`
-                    : `${lang === 'he' ? 'חסכת' : 'Saved'} ₪${costDiff.toFixed(1)}`}
+                    ? `${lang === 'he' ? 'חיסכון אפשרי' : 'Possible saving'} ${curr}${goalSpendToday.toFixed(1)}`
+                    : `${lang === 'he' ? 'חסכת' : 'Saved'} ${curr}${costDiff.toFixed(1)}`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {count === 0
@@ -192,7 +195,7 @@ export default function HomePage() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 gap-3 px-5 mt-4">
         <div className="bg-card rounded-2xl p-4 text-center">
-          <div className="text-2xl font-bold text-amber-400">₪{spentToday.toFixed(1)}</div>
+          <div className="text-2xl font-bold text-amber-400">{curr}{spentToday.toFixed(1)}</div>
           <div className="text-xs text-muted-foreground mt-1">{t('home_today_spend')}</div>
         </div>
         <div className="bg-card rounded-2xl p-4 text-center">

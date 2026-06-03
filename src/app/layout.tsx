@@ -3,6 +3,7 @@ import { Heebo } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import { TermsGuard } from '@/components/TermsGuard'
 
 const heebo = Heebo({ subsets: ['hebrew', 'latin'], variable: '--font-sans', display: 'swap' })
 
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl" className={`${heebo.variable} dark`}>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <AuthProvider><LanguageProvider>{children}</LanguageProvider></AuthProvider>
+        <AuthProvider><LanguageProvider><TermsGuard>{children}</TermsGuard></LanguageProvider></AuthProvider>
       </body>
     </html>
   )

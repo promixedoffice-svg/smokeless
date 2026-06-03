@@ -38,6 +38,7 @@ export function useLogs(userId: string | undefined) {
     }
     setLogs((prev) => [optimistic, ...prev])
     await logCigarette(userId)
+    localStorage.setItem('smokeless_last_log_time', String(Date.now()))
     updateChallengeScores(userId) // update challenge scores in background
   }, [userId])
 
