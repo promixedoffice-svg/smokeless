@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth'
+import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth, googleProvider, firebaseConfigured } from '@/lib/firebase'
 import { getUserProfile, saveUserProfile, generateInviteCode } from '@/lib/firestore'
 import { UserProfile } from '@/types'
@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         streak: 0,
       }
       await saveUserProfile(p)
-      // Notify admin via Telegram (silent — never blocks login)
       fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,9 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       return
     }
-    // Handle redirect result for mobile sign-in
-    getRedirectResult(auth).catch(() => {})
-
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
       if (u) {
@@ -71,12 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signInWithGoogle() {
-    const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
-    if (isMobile) {
-      await signInWithRedirect(auth, googleProvider)
-    } else {
-      await signInWithPopup(auth, googleProvider)
-    }
+    await signInWithPopup(auth, googleProvider)
   }
 
   async function logout() {
