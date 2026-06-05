@@ -1,5 +1,5 @@
 export const APP_URL = 'https://smokeless-omega.vercel.app'
-export const APP_VERSION = '1.2.5'
+export const APP_VERSION = '1.2.10'
 export const APP_VERSION_DATE = 'יוני 2026'
 export const SUPPORT_PHONE = '0528344075'
 export const SUPPORT_PHONE_INTL = '+972528344075'
