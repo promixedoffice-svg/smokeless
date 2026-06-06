@@ -15,12 +15,14 @@ export function LoginScreen() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center" dir="rtl">
         <div className="mb-6 text-6xl">⚙️</div>
         <h1 className="text-2xl font-bold mb-2">נדרשת הגדרת Firebase</h1>
-        <p className="text-muted-foreground text-sm mb-8 max-w-xs leading-relaxed">
-          כדי להפעיל את Smokless, צריך ליצור פרויקט Firebase ולהגדיר את קובץ <code className="bg-muted px-1 rounded text-amber-400">.env.local</code>
-        </p>
       </div>
     )
   }
+
+  // Show error from server-side OAuth failure
+  const urlError = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('auth_error')
+    : null
 
   async function handleSignIn() {
     setLoading(true)
@@ -28,7 +30,7 @@ export function LoginScreen() {
     try {
       await signInWithGoogle()
     } catch (e: any) {
-      setError(e?.code ?? e?.message ?? 'שגיאה לא ידועה')
+      setError(e?.code ?? e?.message ?? 'שגיאה')
       setLoading(false)
     }
   }
@@ -62,8 +64,8 @@ export function LoginScreen() {
           )}
         </Button>
 
-        {error && (
-          <p className="text-red-400 text-xs mt-2 break-all">{error}</p>
+        {(error || urlError) && (
+          <p className="text-red-400 text-xs mt-2">{error || urlError}</p>
         )}
       </div>
 

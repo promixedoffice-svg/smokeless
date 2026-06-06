@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
+import { User, signInWithPopup, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth, googleProvider, firebaseConfigured } from '@/lib/firebase'
 import { getUserProfile, saveUserProfile, generateInviteCode } from '@/lib/firestore'
 import { UserProfile } from '@/types'
@@ -54,6 +54,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       return
     }
+
+    // Handle server-side OAuth token (mobile-compatible flow)
+    if (typeof window !== 'undefined' && window.location.hash.includes('gtoken=')) {
+      const raw = window.location.hash.split('gtoken=')[1]
+      const idToken = decodeURIComponent(raw.split('&')[0])
+      window.history.replaceState({}, '', '/')
+      const credential = GoogleAuthProvider.credential(idToken)
+      signInWithCredential(auth, credential).catch(() => setLoading(false))
+      // onAuthStateChanged below will pick up the signed-in user
+    }
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
       if (u) {
@@ -67,7 +78,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signInWithGoogle() {
-    await signInWithPopup(auth, googleProvider)
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+    if (isMobile) {
+      // Server-side OAuth — no popup, no cross-origin issues
+      window.location.href = '/api/auth/google'
+    } else {
+      await signInWithPopup(auth, googleProvider)
+    }
   }
 
   async function logout() {
